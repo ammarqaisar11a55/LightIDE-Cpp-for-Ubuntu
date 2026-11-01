@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(LightIDE
-    VERSION 0.2.0
+    VERSION 0.3.0
     DESCRIPTION "Lightweight C/C++ IDE, a modern Dev-C++ alternative"
     LANGUAGES CXX)
 
