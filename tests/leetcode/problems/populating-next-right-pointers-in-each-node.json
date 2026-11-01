@@ -1,0 +1,17 @@
+{
+  "questionId": "116",
+  "questionFrontendId": "116",
+  "title": "Populating Next Right Pointers in Each Node",
+  "titleSlug": "populating-next-right-pointers-in-each-node",
+  "difficulty": "Medium",
+  "isPaidOnly": false,
+  "content": "<p><strong class=\"example\">Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2019/02/14/116_sample.png\" style=\"width: 500px; height: 171px;\" />\n<pre>\n<strong>Input:</strong> root = [1,2,3,4,5,6,7]\n<strong>Output:</strong> [1,#,2,3,#,4,5,6,7,#]\n<strong>Explanation: </strong>Given the above perfect binary tree (Figure A), your function should populate each next pointer to point to its next right node, just like in Figure B. The serialized output is in level order as connected by the next pointers, with &#39;#&#39; signifying the end of each level.\n</pre>\n\n<p><strong class=\"example\">Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> root = []\n<strong>Output:</strong> []\n</pre>\n\n<p>&nbsp;</p>\n",
+  "exampleTestcases": "[1,2,3,4,5,6,7]\n[]",
+  "metaData": "{\n  \"name\": \"connect\",\n  \"params\": [\n    {\n      \"name\": \"root\",\n      \"type\": \"TreeNode\"\n    }\n  ],\n  \"return\": {\n    \"type\": \"TreeNode\"\n  },\n  \"structures\": [\n    {\n      \"name\": \"TreeNode\",\n      \"comment\": \"Definition for a Node.\",\n      \"members\": [\n        {\n          \"name\": \"val\",\n          \"type\": \"integer\"\n        },\n        {\n          \"name\": \"left\",\n          \"type\": \"TreeNode\"\n        },\n        {\n          \"name\": \"right\",\n          \"type\": \"TreeNode\"\n        },\n        {\n          \"name\": \"next\",\n          \"type\": \"TreeNode\"\n        }\n      ]\n    }\n  ],\n  \"languages\": [\n    \"cpp\",\n    \"java\",\n    \"python\",\n    \"csharp\",\n    \"javascript\",\n    \"python3\",\n    \"swift\",\n    \"golang\",\n    \"kotlin\",\n    \"ruby\",\n    \"c\",\n    \"scala\",\n    \"php\",\n    \"typescript\"\n  ],\n  \"manual\": true,\n\"typescriptCustomType\" : \"class _Node {\\n    val: number\\n    left: _Node | null\\n    right: _Node | null\\n    next: _Node | null\\n\\n    constructor(val?: number, left?: _Node, right?: _Node, next?: _Node) {\\n        this.val = (val===undefined ? 0 : val)\\n        this.left = (left===undefined ? null : left)\\n        this.right = (right===undefined ? null : right)\\n        this.next = (next===undefined ? null : next)\\n    }\\n}\"\n}",
+  "codeSnippets": [
+    {
+      "langSlug": "cpp",
+      "code": "/*\n// Definition for a Node.\nclass Node {\npublic:\n    int val;\n    Node* left;\n    Node* right;\n    Node* next;\n\n    Node() : val(0), left(NULL), right(NULL), next(NULL) {}\n\n    Node(int _val) : val(_val), left(NULL), right(NULL), next(NULL) {}\n\n    Node(int _val, Node* _left, Node* _right, Node* _next)\n        : val(_val), left(_left), right(_right), next(_next) {}\n};\n*/\n\nclass Solution {\npublic:\n    Node* connect(Node* root) {\n        \n    }\n};"
+    }
+  ]
+}
