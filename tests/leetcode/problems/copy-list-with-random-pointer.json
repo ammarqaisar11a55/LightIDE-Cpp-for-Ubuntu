@@ -1,0 +1,17 @@
+{
+  "questionId": "138",
+  "questionFrontendId": "138",
+  "title": "Copy List with Random Pointer",
+  "titleSlug": "copy-list-with-random-pointer",
+  "difficulty": "Medium",
+  "isPaidOnly": false,
+  "content": "<p><strong class=\"example\">Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2019/12/18/e1.png\" style=\"width: 700px; height: 142px;\" />\n<pre>\n<strong>Input:</strong> head = [[7,null],[13,0],[11,4],[10,2],[1,0]]\n<strong>Output:</strong> [[7,null],[13,0],[11,4],[10,2],[1,0]]\n</pre>\n\n<p><strong class=\"example\">Example 2:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2019/12/18/e2.png\" style=\"width: 700px; height: 114px;\" />\n<pre>\n<strong>Input:</strong> head = [[1,1],[2,1]]\n<strong>Output:</strong> [[1,1],[2,1]]\n</pre>\n\n<p><strong class=\"example\">Example 3:</strong></p>\n\n<p><strong><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2019/12/18/e3.png\" style=\"width: 700px; height: 122px;\" /></strong></p>\n\n<pre>\n<strong>Input:</strong> head = [[3,null],[3,0],[3,null]]\n<strong>Output:</strong> [[3,null],[3,0],[3,null]]\n</pre>\n\n<p>&nbsp;</p>\n",
+  "exampleTestcases": "[[7,null],[13,0],[11,4],[10,2],[1,0]]\n[[1,1],[2,1]]\n[[3,null],[3,0],[3,null]]",
+  "metaData": "{\n  \"name\": \"copyRandomList\",\n  \"params\": [\n    {\n      \"name\": \"head\",\n      \"type\": \"ListNode\"\n    }\n  ],\n  \"return\": {\n    \"type\": \"ListNode\"\n  },\n  \"languages\": [\n    \"cpp\",\n    \"java\",\n    \"python\",\n    \"csharp\",\n    \"javascript\",\n    \"python3\",\n    \"golang\",\n    \"swift\",\n    \"kotlin\",\n    \"ruby\",\n    \"c\",\n    \"scala\",\n    \"php\",\n    \"typescript\"\n  ],\n  \"manual\": true,\n\"typescriptCustomType\" : \"class _Node {\\n    val: number\\n    next: _Node | null\\n    random: _Node | null\\n\\n    constructor(val?: number, next?: _Node, random?: _Node) {\\n        this.val = (val===undefined ? 0 : val)\\n        this.next = (next===undefined ? null : next)\\n        this.random = (random===undefined ? null : random)\\n    }\\n}\\n\"\n\n}",
+  "codeSnippets": [
+    {
+      "langSlug": "cpp",
+      "code": "/*\n// Definition for a Node.\nclass Node {\npublic:\n    int val;\n    Node* next;\n    Node* random;\n    \n    Node(int _val) {\n        val = _val;\n        next = NULL;\n        random = NULL;\n    }\n};\n*/\n\nclass Solution {\npublic:\n    Node* copyRandomList(Node* head) {\n        \n    }\n};"
+    }
+  ]
+}
