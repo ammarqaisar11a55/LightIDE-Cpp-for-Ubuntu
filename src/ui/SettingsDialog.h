@@ -19,7 +19,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    enum Page { AppearancePage, EditorPage, CompilerPage };
+    enum Page { AppearancePage, EditorPage, CompilerPage, LeetCodePage };
 
     explicit SettingsDialog(Settings *settings, QWidget *parent = nullptr);
 
@@ -32,6 +32,7 @@ private:
     QWidget *createAppearancePage();
     QWidget *createEditorPage();
     QWidget *createCompilerPage();
+    QWidget *createLeetCodePage();
     void loadFromSettings();
 
     Settings *m_settings;
@@ -68,4 +69,10 @@ private:
     QLineEdit *m_libraries;
     QLineEdit *m_additionalArgs;
     QLineEdit *m_outputDirectory;
+
+    QLineEdit *m_lcDirectory;
+    QComboBox *m_lcStandard;
+    QLineEdit *m_lcFlags;
+    QSpinBox *m_lcTimeout;
+    QCheckBox *m_lcSanitizers;
 };
