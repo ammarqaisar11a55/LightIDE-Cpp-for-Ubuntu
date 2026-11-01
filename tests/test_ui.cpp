@@ -5,22 +5,30 @@
 #include "compiler/CompilerManager.h"
 #include "core/Settings.h"
 #include "editor/CodeEditor.h"
+#include "leetcode/LeetCodeClient.h"
+#include "leetcode/ProblemFolder.h"
+#include "leetcode/QuestionParser.h"
+#include "leetcode/TestSuiteRunner.h"
 #include "project/Project.h"
 #include <Qsci/qscilexer.h>
+#include "ui/AddTestDialog.h"
 #include "ui/DebugPanel.h"
 #include "ui/EditorWidget.h"
 #include "ui/FindBar.h"
 #include "ui/FindInFilesDialog.h"
+#include "ui/LeetCodePanel.h"
 #include "ui/OutputPanel.h"
 #include "ui/SettingsDialog.h"
 #include "ui/Sidebar.h"
 #include "ui/TerminalView.h"
 #include "ui/MainWindow.h"
 
+#include <QtNetwork>
 #include <QtTest>
 #include <QtWidgets>
 
 Q_DECLARE_METATYPE(BuildResult)
+Q_DECLARE_METATYPE(LcRunReport)
 
 namespace {
 
@@ -153,6 +161,38 @@ private:
         return false;
     }
 
+    // A fetched-looking two-sum folder, opened, with the given code in its body.
+    CodeEditor *openTwoSum(const QByteArray &body)
+    {
+        QFile fixture(QStringLiteral(LIGHTIDE_LEETCODE_FIXTURES) + "/problems/two-sum.json");
+        if (!fixture.open(QIODevice::ReadOnly))
+            return nullptr;
+        const LeetCodeProblem problem =
+            QuestionParser::parseQuestion(QJsonDocument::fromJson(fixture.readAll()).object());
+
+        m_settings->leetcode.problemsDirectory = path("leetcode");
+        m_settings->leetcode.flags = "-O0";
+        const ProblemFolder folder(path("leetcode/two-sum"));
+        folder.create(problem, false);
+
+        CodeEditor *e = m_window->editors()->openFile(folder.solutionPath());
+        QString text = e->text();
+        text.replace("// TODO: write your solution", QString::fromUtf8(body));
+        e->setText(text);
+        return e;
+    }
+
+    LcRunReport runLeetCode(const QString &actionName = QStringLiteral("lcRun"))
+    {
+        QSignalSpy finished(m_window->testRunner(), &TestSuiteRunner::finished);
+        action(actionName)->trigger();
+        if (finished.isEmpty() && !finished.wait(timeoutMs))
+            qFatal("tests did not finish");
+        return finished.at(0).at(0).value<LcRunReport>();
+    }
+
+    LeetCodePanel *leetCode() { return m_window->outputPanel()->leetCodePanel(); }
+
     CodeEditor *open(const QString &relative, const QByteArray &source)
     {
         writeText(path(relative), source);
@@ -160,7 +200,11 @@ private:
     }
 
 private slots:
-    void initTestCase() { qRegisterMetaType<BuildResult>(); }
+    void initTestCase()
+    {
+        qRegisterMetaType<BuildResult>();
+        qRegisterMetaType<LcRunReport>();
+    }
 
     void init()
     {
@@ -1150,6 +1194,205 @@ private slots:
         QCOMPARE(file.readAll(), QByteArray("int a\\1b;\n"));
     }
 
+    // --- LeetCode ------------------------------------------------------------
+
+    void leetCodeTestsPassAndShowInThePanel()
+    {
+        CodeEditor *e = openTwoSum("unordered_map<int, int> seen;\n"
+                                   "        for (int i = 0; i < (int)nums.size(); i++) {\n"
+                                   "            if (seen.count(target - nums[i])) return {seen[target - nums[i]], i};\n"
+                                   "            seen[nums[i]] = i;\n"
+                                   "        }\n"
+                                   "        return {};");
+        const LcRunReport report = runLeetCode();
+        QCOMPARE(report.passed, 3);
+        QCOMPARE(report.total, 3);
+        QVERIFY(!report.failed);
+        QVERIFY(!e->isModified());
+        QCOMPARE(m_window->outputPanel()->currentIndex(), int(OutputPanel::LeetCodeTab));
+        QCOMPARE(leetCode()->results()->topLevelItemCount(), 3);
+        QVERIFY(leetCode()->summary().contains("3 / 3 tests passed"));
+        QVERIFY(leetCode()->statement()->toPlainText().contains("Two Sum"));
+        screenshot("leetcode-pass");
+    }
+
+    void wrongAnswerShowsExpectedAndActual()
+    {
+        openTwoSum("return {7, 7};");
+        const LcRunReport report = runLeetCode();
+        QVERIFY(report.failed);
+        QCOMPARE(report.passed, 0);
+        const QString details = leetCode()->details()->toPlainText();
+        QVERIFY(details.contains("[0,1]"));
+        QVERIFY(details.contains("[7,7]"));
+        screenshot("leetcode-fail");
+    }
+
+    void compileErrorInASolutionIsClickable()
+    {
+        CodeEditor *e = openTwoSum("this does not compile;");
+        QSignalSpy reported(m_window.data(), &MainWindow::buildReported);
+        action("lcRun")->trigger();
+        QVERIFY(reported.wait(timeoutMs));
+        QVERIFY(!reported.at(0).at(0).value<BuildResult>().success);
+        QCOMPARE(m_window->outputPanel()->currentIndex(), int(OutputPanel::MessagesTab));
+        QVERIFY(!m_window->testRunner()->isRunning());
+        QVERIFY(!action("stop")->isEnabled());
+
+        const Diagnostic first = m_window->outputPanel()->diagnostics().first();
+        QCOMPARE(QFileInfo(first.file).fileName(), QString("solution.cpp"));
+        QVERIFY(e->text(first.line - 1).contains("this does not compile"));
+    }
+
+    void secondRunReusesTheBuild()
+    {
+        openTwoSum("return {0, 1};");
+        runLeetCode();
+        const LcRunReport again = runLeetCode();
+        QCOMPARE(again.total, 3);
+        QVERIFY(m_window->outputPanel()->compilerOutput()->toPlainText().contains("up to date"));
+    }
+
+    void runCurrentTestUsesTheCursor()
+    {
+        CodeEditor *e = openTwoSum("return {0, 1};");
+        for (int line = 0; line < e->lines(); ++line) {
+            if (e->text(line).contains("// Test Case 2:")) {
+                e->setCursorPosition(line + 3, 0);
+                break;
+            }
+        }
+        const LcRunReport report = runLeetCode("lcRunCurrent");
+        QCOMPARE(report.total, 1);
+        QCOMPARE(report.tests.first().id, 2);
+    }
+
+    void customTestsReachTheHarnessAndKeepTheUserCode()
+    {
+        CodeEditor *e = openTwoSum("return {0, 1};");
+        e->setModified(false);
+        action("save")->trigger();
+
+        auto *timer = new QTimer(this);
+        timer->setInterval(10);
+        connect(timer, &QTimer::timeout, this, [timer] {
+            auto *dialog = qobject_cast<AddTestDialog *>(QApplication::activeModalWidget());
+            if (!dialog)
+                return;
+            timer->stop();
+            // A mistyped value is caught here, before it can break the harness.
+            dialog->inputEdits().at(0)->setText("not a list");
+            dialog->inputEdits().at(1)->setText("9");
+            dialog->tryAccept();
+            QVERIFY(dialog->isVisible());
+            QVERIFY(!dialog->errorText().isEmpty());
+
+            dialog->inputEdits().at(0)->setText("[1,2,3]");
+            dialog->expectedEdit()->setText("[0,1]");
+            dialog->tryAccept();
+        });
+        timer->start();
+        action("lcAddTest")->trigger();
+
+        const LcRunReport report = runLeetCode();
+        QCOMPARE(report.total, 4);
+        QVERIFY(e->text().contains("// Test Case 4 (custom): nums = [1,2,3], target = 9"));
+        QVERIFY(e->text().contains("return {0, 1};"));
+        QVERIFY(!e->isModified());
+    }
+
+    void copySolutionPutsOnlyTheSubmissionOnTheClipboard()
+    {
+        openTwoSum("return {0, 1};");
+        action("lcCopy")->trigger();
+        const QString copied = QApplication::clipboard()->text();
+        QVERIFY(copied.startsWith("class Solution {"));
+        QVERIFY(copied.contains("return {0, 1};"));
+        QVERIFY(!copied.contains("main"));
+        QVERIFY(!copied.contains(".lc/leetcode.hpp"));
+    }
+
+    void debuggingASolutionStopsAtItsBreakpoint()
+    {
+        CodeEditor *e = openTwoSum("int answer = (int)nums.size();\n        return {0, answer - 1};");
+        int breakpointLine = 0;
+        for (int line = 0; line < e->lines(); ++line) {
+            if (e->text(line).contains("int answer"))
+                breakpointLine = line + 1;
+        }
+        QVERIFY(breakpointLine > 0);
+        e->toggleBreakpoint(breakpointLine);
+
+        action("lcDebug")->trigger();
+        QVERIFY(waitForDebugState(DebuggerManager::State::Paused));
+        QTRY_VERIFY_WITH_TIMEOUT(m_window->outputPanel()->debugPanel()->framesView()->topLevelItemCount() > 0, timeoutMs);
+        QCOMPARE(m_window->outputPanel()->debugPanel()->framesView()->topLevelItem(0)->text(1),
+                 QString("Solution::twoSum"));
+        action("stop")->trigger();
+        QVERIFY(waitForDebugState(DebuggerManager::State::Idle));
+    }
+
+    void ordinaryFilesExplainWhatLeetCodeNeeds()
+    {
+        open("plain.cpp", "int main() { return 0; }\n");
+        answerNextDialog(QMessageBox::Ok);
+        action("lcRun")->trigger();
+        QVERIFY(!m_window->buildProcess()->isRunning());
+    }
+
+    void compileAndRunStillWorksOnASolution()
+    {
+        // solution.cpp is a normal C++ file, so the ordinary F11 runs its harness too.
+        openTwoSum("return {0, 1};");
+        QVERIFY(triggerBuild("compileRun").success);
+        QVERIFY(waitForTerminal("[match]"));
+    }
+
+    void fetchingAProblemCreatesAndOpensIt()
+    {
+        QFile fixture(QStringLiteral(LIGHTIDE_LEETCODE_FIXTURES) + "/problems/two-sum.json");
+        QVERIFY(fixture.open(QIODevice::ReadOnly));
+        const QJsonObject question = QJsonDocument::fromJson(fixture.readAll()).object();
+        const QByteArray body = QJsonDocument(QJsonObject{{"data", QJsonObject{{"question", question}}}})
+                                    .toJson(QJsonDocument::Compact);
+
+        QTcpServer server;
+        QVERIFY(server.listen(QHostAddress::LocalHost));
+        connect(&server, &QTcpServer::newConnection, this, [&server, body] {
+            QTcpSocket *socket = server.nextPendingConnection();
+            connect(socket, &QTcpSocket::readyRead, socket, [socket, body] {
+                socket->readAll();
+                socket->write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: "
+                              + QByteArray::number(body.size()) + "\r\n\r\n" + body);
+                socket->disconnectFromHost();
+            });
+        });
+
+        m_settings->leetcode.problemsDirectory = path("practice");
+        m_window->leetCodeClient()->setBaseUrl(QString("http://127.0.0.1:%1").arg(server.serverPort()));
+        m_window->fetchProblem("https://leetcode.com/problems/two-sum/");
+
+        QTRY_VERIFY_WITH_TIMEOUT(editor() != nullptr, timeoutMs);
+        QCOMPARE(QFileInfo(editor()->filePath()).fileName(), QString("solution.cpp"));
+        QVERIFY(editor()->text().contains("vector<int> twoSum(vector<int>& nums, int target)"));
+        QCOMPARE(leetCode()->problems()->count(), 1);
+        QVERIFY(leetCode()->problems()->item(0)->text().contains("Two Sum"));
+        QCOMPARE(m_window->outputPanel()->currentIndex(), int(OutputPanel::LeetCodeTab));
+    }
+
+    void problemListOpensSolutions()
+    {
+        openTwoSum("return {0, 1};");
+        editor()->setModified(false);
+        m_window->editors()->closeAll();
+        leetCode()->setProblemsDirectory(path("leetcode"));
+        QCOMPARE(leetCode()->problems()->count(), 1);
+
+        emit leetCode()->problems()->itemClicked(leetCode()->problems()->item(0));
+        QVERIFY(editor());
+        QCOMPARE(QFileInfo(editor()->filePath()).fileName(), QString("solution.cpp"));
+    }
+
     // --- Appearance and settings ---------------------------------------------
 
     void themeSwitchPersists()
@@ -1219,7 +1462,7 @@ private slots:
         for (QAction *menu : menus)
             titles << menu->text().remove('&');
         QCOMPARE(titles, QStringList({"File", "Edit", "Search", "View", "Project", "Build", "Debug",
-                                      "Tools", "Help"}));
+                                      "LeetCode", "Tools", "Help"}));
     }
 };
 
