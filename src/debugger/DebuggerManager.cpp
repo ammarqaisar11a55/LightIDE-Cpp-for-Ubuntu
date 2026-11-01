@@ -9,6 +9,7 @@
 namespace {
 
 constexpr int exitGraceMs = 2000;
+constexpr int destructorGraceMs = 500;
 
 QString describeStop(const MiRecord &record)
 {
@@ -55,10 +56,15 @@ DebuggerManager::DebuggerManager(QObject *parent)
 
 DebuggerManager::~DebuggerManager()
 {
-    if (m_gdb) {
-        m_gdb->disconnect(this);
+    if (!m_gdb)
+        return;
+
+    // A clean exit makes GDB kill the program it is debugging as well.
+    m_gdb->disconnect(this);
+    m_gdb->write("-gdb-exit\n");
+    if (!m_gdb->waitForFinished(destructorGraceMs)) {
         m_gdb->kill();
-        m_gdb->waitForFinished(500);
+        m_gdb->waitForFinished(destructorGraceMs);
     }
 }
 
@@ -280,32 +286,39 @@ void DebuggerManager::refreshVariables()
     });
 }
 
+// The program counts as running from the moment it is told to, not from GDB's
+// reply, so that a second key press cannot send a command mid-step.
+void DebuggerManager::resume(const QString &command)
+{
+    if (m_state != State::Paused)
+        return;
+    setState(State::Running);
+    send(command, [this](const MiRecord &record) {
+        if (record.resultClass != QLatin1String("error"))
+            return;
+        emit consoleOutput(record.payload.text(QStringLiteral("msg")) + QLatin1Char('\n'));
+        setState(State::Paused);
+    });
+}
+
 void DebuggerManager::continueExecution()
 {
-    if (m_state == State::Paused)
-        send(QStringLiteral("-exec-continue"));
+    resume(QStringLiteral("-exec-continue"));
 }
 
 void DebuggerManager::stepInto()
 {
-    if (m_state == State::Paused)
-        send(QStringLiteral("-exec-step"));
+    resume(QStringLiteral("-exec-step"));
 }
 
 void DebuggerManager::stepOver()
 {
-    if (m_state == State::Paused)
-        send(QStringLiteral("-exec-next"));
+    resume(QStringLiteral("-exec-next"));
 }
 
 void DebuggerManager::stepOut()
 {
-    if (m_state == State::Paused) {
-        send(QStringLiteral("-exec-finish"), [this](const MiRecord &record) {
-            if (record.resultClass == QLatin1String("error"))
-                emit consoleOutput(record.payload.text(QStringLiteral("msg")) + QLatin1Char('\n'));
-        });
-    }
+    resume(QStringLiteral("-exec-finish"));
 }
 
 void DebuggerManager::interrupt()
