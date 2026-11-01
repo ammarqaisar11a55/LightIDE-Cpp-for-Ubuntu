@@ -1,0 +1,33 @@
+{
+    "id": 21,
+    "questionId": "21",
+    "slug": "merge-two-sorted-lists",
+    "title": "Merge Two Sorted Lists",
+    "difficulty": "Easy",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/merge-two-sorted-lists/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "exact",
+    "meta": {
+        "name": "mergeTwoLists",
+        "params": [
+            {
+                "name": "list1",
+                "type": "ListNode"
+            },
+            {
+                "name": "list2",
+                "type": "ListNode"
+            }
+        ],
+        "returnType": "ListNode",
+        "systemDesign": false,
+        "manual": false
+    },
+    "starterCode": "/**\n * Definition for singly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode() : val(0), next(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next) {}\n * };\n */\nclass Solution {\npublic:\n    ListNode* mergeTwoLists(ListNode* list1, ListNode* list2) {\n        \n    }\n};",
+    "signatureHash": "32b118d6d5631916",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
