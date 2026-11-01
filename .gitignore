@@ -1,0 +1,28 @@
+# Build trees
+build/
+build-*/
+cmake-build-*/
+_CPack_Packages/
+
+# Packages
+*.deb
+*.AppImage
+
+# CMake leftovers from in-source configures
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Compiled output from sample programs
+*.o
+*.d
+a.out
+
+# Claude Code local state
+.claude/
