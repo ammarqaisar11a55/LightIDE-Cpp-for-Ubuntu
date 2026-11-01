@@ -2,6 +2,8 @@
 
 #include <QtTest>
 
+#include <csignal>
+
 Q_DECLARE_METATYPE(QList<StackFrame>)
 Q_DECLARE_METATYPE(QList<Variable>)
 
@@ -376,6 +378,68 @@ private slots:
         session.debugger.continueExecution();
         QVERIFY(session.exitedSpy.wait(debugTimeoutMs));
         QVERIFY(session.programOutput.contains("argc=2 [two words]"));
+        QVERIFY(session.shutDown());
+    }
+
+    void destroyingAPausedSessionEndsTheProgram()
+    {
+        QTemporaryDir dir;
+        const QString source = dir.filePath("self.cpp");
+        const QString program = dir.filePath("self");
+        const QString pidFile = dir.filePath("pid");
+        {
+            QFile file(source);
+            QVERIFY(file.open(QIODevice::WriteOnly));
+            file.write("#include <cstdio>\n"
+                       "#include <unistd.h>\n"
+                       "int main() {\n"
+                       "    FILE *f = fopen(\"" + pidFile.toUtf8() + "\", \"w\");\n"
+                       "    fprintf(f, \"%d\", getpid());\n"
+                       "    fclose(f);\n"
+                       "    return 0;\n"
+                       "}\n");
+        }
+        QCOMPARE(QProcess::execute("g++", {"-g", source, "-o", program}), 0);
+
+        pid_t inferior = 0;
+        {
+            Session session;
+            session.debugger.start(session.request(program, {{source, 7}}));
+            QVERIFY(session.waitForPause(1));
+            QFile file(pidFile);
+            QVERIFY(file.open(QIODevice::ReadOnly));
+            inferior = file.readAll().toInt();
+            QVERIFY(inferior > 0);
+            QCOMPARE(::kill(inferior, 0), 0);
+        }
+        QTRY_VERIFY_WITH_TIMEOUT(::kill(inferior, 0) != 0, 3000);
+    }
+
+    void aSecondStepWhileSteppingIsIgnored()
+    {
+        Session session;
+        session.debugger.start(session.request(m_program, {{m_source, lineCallingSquare}}));
+        QVERIFY(session.waitForPause(1));
+
+        session.debugger.stepOver();
+        session.debugger.stepOver();
+        session.debugger.stepOver();
+        QVERIFY(session.waitForPause(2));
+        QTest::qWait(100);
+        QCOMPARE(session.pausedSpy.size(), 2);
+        QCOMPARE(session.currentLine(), linePrinting);
+        QVERIFY(!session.console.contains("running"));
+        QVERIFY(session.shutDown());
+    }
+
+    void stepOutOfMainReportsAndStaysPaused()
+    {
+        Session session;
+        session.debugger.start(session.request(m_program));
+        QVERIFY(session.waitForPause(1));
+        session.debugger.stepOut();
+        QTRY_VERIFY_WITH_TIMEOUT(session.console.contains("outermost"), 5000);
+        QCOMPARE(session.debugger.state(), DebuggerManager::State::Paused);
         QVERIFY(session.shutDown());
     }
 
