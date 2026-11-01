@@ -36,6 +36,10 @@ public:
     // Asks about each unsaved file; false means the user cancelled.
     bool confirmCloseAll();
 
+    // Where Save As starts for a file that has never been saved.
+    void setDefaultDirectory(const QString &directory) { m_defaultDirectory = directory; }
+    QString suggestedSavePath(const CodeEditor *editor) const;
+
     void applySettings();
     void applyDiagnostics(const QList<Diagnostic> &diagnostics);
     void clearDiagnostics();
@@ -61,5 +65,6 @@ private:
 
     Settings *m_settings;
     QFileSystemWatcher *m_watcher;
+    QString m_defaultDirectory;
     int m_untitledCounter = 0;
 };
