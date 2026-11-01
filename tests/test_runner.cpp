@@ -26,6 +26,19 @@ QString compile(const QTemporaryDir &dir, const QString &name, const QByteArray 
     return output;
 }
 
+// A killed process stays a zombie until its parent reaps it, and an orphan's new
+// parent may never do so: in a container, PID 1 is often not a real init. A
+// zombie runs nothing, so kill(pid, 0) alone would call it alive.
+bool processIsRunning(pid_t pid)
+{
+    QFile stat(QStringLiteral("/proc/%1/stat").arg(pid));
+    if (!stat.open(QIODevice::ReadOnly))
+        return false;
+    const QByteArray line = stat.readAll();
+    const qsizetype state = line.lastIndexOf(')') + 2;
+    return state < line.size() && line.at(state) != 'Z' && line.at(state) != 'X';
+}
+
 struct Session
 {
     ProcessRunner runner;
@@ -313,11 +326,11 @@ private slots:
         QVERIFY(file.open(QIODevice::ReadOnly));
         const pid_t child = file.readAll().toInt();
         QVERIFY(child > 0);
-        QCOMPARE(::kill(child, 0), 0);
+        QVERIFY(processIsRunning(child));
 
         session.runner.stop();
         QVERIFY(session.finished.wait(runTimeoutMs));
-        QTRY_VERIFY_WITH_TIMEOUT(::kill(child, 0) != 0, 3000);
+        QTRY_VERIFY_WITH_TIMEOUT(!processIsRunning(child), 3000);
     }
 
     void reportsSegfault()
