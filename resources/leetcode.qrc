@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/leetcode">
+        <file alias="lc_runtime.hpp">cpp/lc_runtime.hpp</file>
+    </qresource>
+</RCC>
