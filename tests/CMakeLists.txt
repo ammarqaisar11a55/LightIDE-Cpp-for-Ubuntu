@@ -19,3 +19,11 @@ lightide_add_test(test_project)
 lightide_add_test(test_build)
 lightide_add_test(test_runner)
 lightide_add_test(test_debugger)
+lightide_add_test(test_symbols)
+
+qt_add_executable(test_ui test_ui.cpp)
+target_link_libraries(test_ui PRIVATE lightide_ui Qt6::Test)
+add_test(NAME test_ui COMMAND test_ui)
+set_tests_properties(test_ui PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    TIMEOUT 300)
