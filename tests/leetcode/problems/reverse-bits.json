@@ -1,0 +1,18 @@
+{
+  "questionId": "190",
+  "questionFrontendId": "190",
+  "title": "Reverse Bits",
+  "titleSlug": "reverse-bits",
+  "difficulty": "Easy",
+  "isPaidOnly": false,
+  "content": "<p><strong class=\"example\">Example 1:</strong></p>\n\n<div class=\"example-block\">\n<p><strong>Input:</strong> <span class=\"example-io\">n = 43261596</span></p>\n\n<p><strong>Output:</strong> <span class=\"example-io\">964176192</span></p>\n\n<p><strong>Explanation:</strong></p>\n\n<table>\n\t<tbody>\n\t\t<tr>\n\t\t\t<th>Integer</th>\n\t\t\t<th>Binary</th>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>43261596</td>\n\t\t\t<td>00000010100101000001111010011100</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>964176192</td>\n\t\t\t<td>00111001011110000010100101000000</td>\n\t\t</tr>\n\t</tbody>\n</table>\n</div>\n\n<p><strong class=\"example\">Example 2:</strong></p>\n\n<div class=\"example-block\">\n<p><strong>Input:</strong> <span class=\"example-io\">n = 2147483644</span></p>\n\n<p><strong>Output:</strong> <span class=\"example-io\">1073741822</span></p>\n\n<p><strong>Explanation:</strong></p>\n\n<table>\n\t<tbody>\n\t\t<tr>\n\t\t\t<th>Integer</th>\n\t\t\t<th>Binary</th>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>2147483644</td>\n\t\t\t<td>01111111111111111111111111111100</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>1073741822</td>\n\t\t\t<td>00111111111111111111111111111110</td>\n\t\t</tr>\n\t</tbody>\n</table>\n</div>\n\n<p>&nbsp;</p>\n",
+  "exampleTestcases": "43261596\n2147483644",
+  "metaData": "{\n  \"name\": \"reverseBits\",\n  \"params\": [\n    {\n      \"name\": \"n\",\n      \"type\": \"integer\"\n    }\n  ],\n  \"return\": {\n    \"type\": \"integer\"\n  },\n  \"manual\": false\n}",
+  "codeSnippets": [
+    {
+      "lang": "C++",
+      "langSlug": "cpp",
+      "code": "class Solution {\npublic:\n    int reverseBits(int n) {\n        \n    }\n};"
+    }
+  ]
+}
