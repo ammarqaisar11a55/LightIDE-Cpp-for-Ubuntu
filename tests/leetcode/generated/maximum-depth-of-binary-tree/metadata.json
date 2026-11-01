@@ -1,0 +1,29 @@
+{
+    "id": 104,
+    "questionId": "104",
+    "slug": "maximum-depth-of-binary-tree",
+    "title": "Maximum Depth of Binary Tree",
+    "difficulty": "Easy",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/maximum-depth-of-binary-tree/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "exact",
+    "meta": {
+        "name": "maxDepth",
+        "params": [
+            {
+                "name": "root",
+                "type": "TreeNode"
+            }
+        ],
+        "returnType": "integer",
+        "systemDesign": false,
+        "manual": false
+    },
+    "starterCode": "/**\n * Definition for a binary tree node.\n * struct TreeNode {\n *     int val;\n *     TreeNode *left;\n *     TreeNode *right;\n *     TreeNode() : val(0), left(nullptr), right(nullptr) {}\n *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}\n *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}\n * };\n */\nclass Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        \n    }\n};",
+    "signatureHash": "b3b946ab06653046",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
