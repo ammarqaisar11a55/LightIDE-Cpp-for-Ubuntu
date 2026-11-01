@@ -55,6 +55,21 @@ parts:
       - libqt6widgets6t64
       - qt6-qpa-plugins
       - qt6-wayland
+    # These arrive as package dependencies and are most of the snap's size, but
+    # widgets are drawn in software, and only the Wayland client side is used.
+    prime:
+      - -usr/lib/*/dri
+      - -usr/lib/*/libEGL_mesa*
+      - -usr/lib/*/libGLX_mesa*
+      - -usr/lib/*/libLLVM*
+      - -usr/lib/*/libQt6Qml*
+      - -usr/lib/*/libQt6Quick*
+      - -usr/lib/*/libQt6WaylandCompositor*
+      - -usr/lib/*/libQt6WaylandEglCompositor*
+      - -usr/lib/*/libgallium*
+      - -usr/lib/*/libicuio*
+      - -usr/lib/*/libicutest*
+      - -usr/lib/*/qt6/plugins/wayland-graphics-integration-server
     override-pull: |
       craftctl default
       craftctl set version="$(sed -n 's/^    VERSION \([0-9.]*\)$/\1/p' CMakeLists.txt)"
