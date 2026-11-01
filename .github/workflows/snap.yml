@@ -38,8 +38,16 @@ jobs:
           SNAP_FILE: ${{ steps.build.outputs.snap }}
         run: |
           sudo snap install --dangerous --classic "$SNAP_FILE"
-          lightide --version
-          QT_QPA_PLATFORM=offscreen timeout 5 lightide || test $? -eq 124
+          QT_QPA_PLATFORM=offscreen lightide --version
+
+          # The snap leaves libraries out to stay small, so make sure that the app
+          # and every display plugin still have all of theirs.
+          root=/snap/lightide/current/usr
+          missing=$(ldd "$root/bin/lightide" "$root"/lib/x86_64-linux-gnu/qt6/plugins/platforms/*.so | grep 'not found' || true)
+          test -z "$missing" || { echo "$missing"; exit 1; }
+
+          sudo apt-get install -y xvfb
+          xvfb-run -a timeout 5 lightide || test $? -eq 124
 
       - uses: snapcore/action-publish@v1
         if: github.ref_type == 'tag' && env.SNAPCRAFT_STORE_CREDENTIALS != ''
