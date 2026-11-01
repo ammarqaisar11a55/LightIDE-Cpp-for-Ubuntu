@@ -26,12 +26,32 @@ add_library(lightide_core STATIC
     filesystem/FileManager.h
     filesystem/FileSearch.cpp
     filesystem/FileSearch.h
+    leetcode/CppSignature.cpp
+    leetcode/CppSignature.h
+    leetcode/HarnessGenerator.cpp
+    leetcode/HarnessGenerator.h
+    leetcode/LcProblem.h
+    leetcode/LcValue.cpp
+    leetcode/LcValue.h
+    leetcode/LeetCodeClient.cpp
+    leetcode/LeetCodeClient.h
+    leetcode/OutputComparator.cpp
+    leetcode/OutputComparator.h
+    leetcode/ProblemFolder.cpp
+    leetcode/ProblemFolder.h
+    leetcode/QuestionParser.cpp
+    leetcode/QuestionParser.h
+    leetcode/SolutionFile.cpp
+    leetcode/SolutionFile.h
+    leetcode/TestSuiteRunner.cpp
+    leetcode/TestSuiteRunner.h
     project/Project.cpp
     project/Project.h
+    ${PROJECT_SOURCE_DIR}/resources/leetcode.qrc
 )
 
 target_include_directories(lightide_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lightide_core PUBLIC Qt6::Core)
+target_link_libraries(lightide_core PUBLIC Qt6::Core Qt6::Network)
 target_compile_options(lightide_core PRIVATE -Wall -Wextra)
 target_compile_definitions(lightide_core PUBLIC
     QT_NO_CAST_TO_ASCII
@@ -42,6 +62,8 @@ add_library(lightide_ui STATIC
     editor/CodeEditor.h
     editor/SyntaxHighlighter.cpp
     editor/SyntaxHighlighter.h
+    ui/AddTestDialog.cpp
+    ui/AddTestDialog.h
     ui/DebugPanel.cpp
     ui/DebugPanel.h
     ui/EditorWidget.cpp
@@ -50,6 +72,8 @@ add_library(lightide_ui STATIC
     ui/FindBar.h
     ui/FindInFilesDialog.cpp
     ui/FindInFilesDialog.h
+    ui/LeetCodePanel.cpp
+    ui/LeetCodePanel.h
     ui/MainWindow.cpp
     ui/MainWindow.h
     ui/OutputPanel.cpp
