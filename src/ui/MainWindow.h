@@ -5,6 +5,7 @@
 #include "core/Settings.h"
 #include "debugger/DebuggerManager.h"
 #include "execution/ProcessRunner.h"
+#include "leetcode/ProblemFolder.h"
 
 #include <QHash>
 #include <QMainWindow>
@@ -19,6 +20,7 @@ class CompilerManager;
 class EditorWidget;
 class FindBar;
 class FindInFilesDialog;
+class LeetCodeClient;
 class OutputPanel;
 class Project;
 class QComboBox;
@@ -27,7 +29,11 @@ class QMenu;
 class QSplitter;
 class QStackedWidget;
 class Sidebar;
+class TestSuiteRunner;
 class WelcomeWidget;
+struct LcRunReport;
+struct LcTestResult;
+struct LeetCodeProblem;
 
 class MainWindow : public QMainWindow
 {
@@ -49,6 +55,11 @@ public:
     DebuggerManager *debugger() const { return m_debugger; }
     CompilerManager *compilers() const { return m_compilers; }
     Project *project() const { return m_project.get(); }
+    LeetCodeClient *leetCodeClient() const { return m_leetCodeClient; }
+    TestSuiteRunner *testRunner() const { return m_testRunner; }
+
+    void fetchProblem(const QString &reference);
+    void runLeetCodeTests(const QList<int> &onlyTests = {});
 
 public slots:
     void compile();
@@ -70,7 +81,7 @@ protected:
     void dropEvent(QDropEvent *event) override;
 
 private:
-    enum class AfterBuild { Nothing, Run, Debug };
+    enum class AfterBuild { Nothing, Run, Debug, LeetCodeTests, LeetCodeDebug };
 
     struct RunTarget
     {
@@ -84,6 +95,7 @@ private:
     QAction *addAction(const QString &name, const QString &text, const QString &icon,
                        const QKeySequence &shortcut, std::function<void()> handler);
     void createActions();
+    void createLeetCodeActions();
     void createMenus();
     void createToolBar();
     void createCentralArea();
@@ -131,6 +143,7 @@ private:
     bool runTargetIsStale(const RunTarget &target);
     void launch(const RunTarget &target);
     void beginDebugSession();
+    void beginDebugSession(const RunTarget &target);
     void onProgramFinished(const RunResult &result);
     void onDebuggerPaused(const QString &file, int line, const QString &reason);
     void onDebugSessionEnded();
@@ -139,6 +152,28 @@ private:
     void showRunOptions();
     void showMissingToolMessage(const QString &toolName);
     void showCompilerStatus();
+
+    // LeetCode.
+    std::optional<ProblemFolder> currentProblem();
+    LeetCodeRunSettings leetCodeRunSettings() const;
+    CodeEditor *syncProblemEditor(const ProblemFolder &folder, const ProblemMetadata &metadata,
+                                  const QList<LcTestCase> &tests);
+    void buildProblem(AfterBuild after, const QList<int> &onlyTests);
+    void startPlan(const BuildPlan &plan, AfterBuild after);
+    void onProblemFetched(const LeetCodeProblem &problem);
+    void onTestsFinished(const LcRunReport &report);
+    void promptFetchProblem();
+    void runCurrentTest();
+    void debugSolution();
+    void copySolution();
+    void addCustomTest();
+    void refreshProblem();
+    void openProblemInBrowser();
+    void editTests();
+    void connectAccount();
+    void disconnectAccount();
+    void openProblemFolder(const QString &directory);
+    void goToTest(int id);
 
     // Navigation.
     void goToLine();
@@ -163,6 +198,11 @@ private:
     OutputPanel *m_output;
     Sidebar *m_sidebar;
     FindInFilesDialog *m_findInFiles = nullptr;
+    LeetCodeClient *m_leetCodeClient;
+    TestSuiteRunner *m_testRunner;
+    std::optional<ProblemFolder> m_activeProblem;
+    QString m_refreshDirectory;
+    QList<int> m_onlyTests;
     QSplitter *m_horizontalSplitter;
     QSplitter *m_verticalSplitter;
 
@@ -176,6 +216,7 @@ private:
     QLabel *m_indentLabel = nullptr;
     QLabel *m_languageLabel = nullptr;
     QLabel *m_toolLabel = nullptr;
+    QLabel *m_leetCodeLabel = nullptr;
     QTimer m_symbolTimer;
 
     QStringList m_detectedToolPaths;
