@@ -45,6 +45,9 @@ public:
 
     void openPaths(const QStringList &paths);
     bool openProject(const QString &path);
+    void openFolder(const QString &path);
+    void closeFolder();
+    QString currentFolder() const;
 
     EditorWidget *editors() const { return m_editors; }
     OutputPanel *outputPanel() const { return m_output; }
@@ -122,6 +125,8 @@ private:
 
     // Files and projects.
     void openFileDialog();
+    void openFolderDialog();
+    void showFolderInSidebar();
     void newProject();
     void openProjectDialog();
     void closeProject();
@@ -210,6 +215,7 @@ private:
     QHash<QString, QString> m_actionIcons;
     QMenu *m_recentFilesMenu = nullptr;
     QMenu *m_recentProjectsMenu = nullptr;
+    QMenu *m_recentFoldersMenu = nullptr;
     QComboBox *m_configurationBox = nullptr;
     QLabel *m_cursorLabel = nullptr;
     QLabel *m_eolLabel = nullptr;
