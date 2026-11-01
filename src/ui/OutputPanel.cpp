@@ -2,6 +2,7 @@
 
 #include "compiler/DiagnosticsParser.h"
 #include "ui/DebugPanel.h"
+#include "ui/LeetCodePanel.h"
 #include "ui/TerminalView.h"
 #include "ui/Theme.h"
 
@@ -37,6 +38,7 @@ OutputPanel::OutputPanel(QWidget *parent)
     , m_messages(new QTreeWidget)
     , m_terminal(new TerminalView)
     , m_debug(new DebugPanel)
+    , m_leetCode(new LeetCodePanel)
 {
     setDocumentMode(true);
     tabBar()->setDrawBase(false);
@@ -68,11 +70,13 @@ OutputPanel::OutputPanel(QWidget *parent)
     addTab(m_messages, tr("Build Messages"));
     addTab(m_terminal, tr("Application Output"));
     addTab(m_debug, tr("Debug Console"));
+    addTab(m_leetCode, tr("LeetCode"));
 }
 
 void OutputPanel::setTheme(ThemeKind theme)
 {
     m_theme = theme;
+    m_leetCode->setTheme(theme);
 }
 
 void OutputPanel::clearBuild()
