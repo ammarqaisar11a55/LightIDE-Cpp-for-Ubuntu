@@ -54,6 +54,17 @@ struct CompilerSettings
     BuildOptions buildOptions(BuildConfiguration config) const;
 };
 
+struct LeetCodeSettings
+{
+    QString problemsDirectory;   // Empty means ~/leetcode.
+    QString standard = QStringLiteral("c++17");
+    QString flags = QStringLiteral("-O2 -Wall");
+    bool sanitizers = false;
+    int timeoutMs = 5000;
+
+    QString directory() const;
+};
+
 // What a single source file remembers about how it is built and run.
 struct FileRunOptions
 {
@@ -73,6 +84,7 @@ public:
     EditorSettings editor;
     AppearanceSettings appearance;
     CompilerSettings compiler;
+    LeetCodeSettings leetcode;
 
     void load();
     void save();
