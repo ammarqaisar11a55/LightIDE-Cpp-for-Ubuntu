@@ -4,7 +4,6 @@
 #include "project/Project.h"
 
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemModel>
 #include <QHeaderView>
@@ -100,9 +99,8 @@ QWidget *Sidebar::createFilesPage()
     layout->setSpacing(0);
 
     m_folderButton->setFlat(true);
-    m_folderButton->setToolTip(tr("Choose the folder shown here"));
     m_folderButton->setText(tr("Open Folder..."));
-    connect(m_folderButton, &QPushButton::clicked, this, &Sidebar::chooseFolder);
+    connect(m_folderButton, &QPushButton::clicked, this, &Sidebar::openFolderRequested);
 
     m_fileTree->setHeaderHidden(true);
     m_fileTree->setUniformRowHeights(true);
@@ -116,21 +114,13 @@ QWidget *Sidebar::createFilesPage()
     return page;
 }
 
-void Sidebar::chooseFolder()
-{
-    const QString path = QFileDialog::getExistingDirectory(this, tr("Open Folder"), m_rootFolder);
-    if (path.isEmpty())
-        return;
-    setRootFolder(path);
-    emit rootFolderChanged(path);
-}
-
-void Sidebar::setRootFolder(const QString &path)
+void Sidebar::setRootFolder(const QString &path, bool chosen)
 {
     m_rootFolder = path;
     const QString name = QFileInfo(path).fileName();
-    m_folderButton->setText(name.isEmpty() ? path : name);
-    m_folderButton->setToolTip(path);
+    m_folderButton->setText(!chosen ? tr("Open Folder...") : name.isEmpty() ? path : name);
+    m_folderButton->setToolTip(chosen ? tr("%1\nClick to open another folder").arg(path)
+                                      : tr("Choose the folder to work in"));
     if (m_fileModel)
         m_fileTree->setRootIndex(m_fileModel->setRootPath(path));
 }
