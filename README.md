@@ -47,7 +47,7 @@ Download the `.deb` for your Ubuntu version from the
 then install it, using the name of the file you downloaded:
 
 ```bash
-sudo apt install ./lightide_0.2.0_ubuntu24.04_amd64.deb
+sudo apt install ./lightide_0.3.0_ubuntu24.04_amd64.deb
 ```
 
 You also need the compiler and debugger, if you don't already have them:
