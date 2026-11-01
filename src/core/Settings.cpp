@@ -1,6 +1,7 @@
 #include "core/Settings.h"
 
 #include <QCryptographicHash>
+#include <QDir>
 
 namespace {
 
@@ -47,6 +48,12 @@ BuildOptions CompilerSettings::buildOptions(BuildConfiguration config) const
         options.defines << QStringLiteral("NDEBUG");
     }
     return options;
+}
+
+QString LeetCodeSettings::directory() const
+{
+    return problemsDirectory.isEmpty() ? QDir::home().filePath(QStringLiteral("leetcode"))
+                                       : problemsDirectory;
 }
 
 Settings::Settings(const QString &iniPath, QObject *parent)
@@ -115,6 +122,15 @@ void Settings::load()
                                  : BuildConfiguration::Debug;
     s.endGroup();
 
+    const LeetCodeSettings leetcodeDefaults;
+    s.beginGroup(QStringLiteral("leetcode"));
+    leetcode.problemsDirectory = s.value("problemsDirectory").toString();
+    leetcode.standard = s.value("standard", leetcodeDefaults.standard).toString();
+    leetcode.flags = s.value("flags", leetcodeDefaults.flags).toString();
+    leetcode.sanitizers = s.value("sanitizers", leetcodeDefaults.sanitizers).toBool();
+    leetcode.timeoutMs = s.value("timeoutMs", leetcodeDefaults.timeoutMs).toInt();
+    s.endGroup();
+
     m_recentFiles = s.value("recent/files").toStringList();
     m_recentProjects = s.value("recent/projects").toStringList();
 }
@@ -166,6 +182,14 @@ void Settings::save()
     s.setValue("configuration", compiler.configuration == BuildConfiguration::Release
                                     ? QStringLiteral("release")
                                     : QStringLiteral("debug"));
+    s.endGroup();
+
+    s.beginGroup(QStringLiteral("leetcode"));
+    s.setValue("problemsDirectory", leetcode.problemsDirectory);
+    s.setValue("standard", leetcode.standard);
+    s.setValue("flags", leetcode.flags);
+    s.setValue("sanitizers", leetcode.sanitizers);
+    s.setValue("timeoutMs", leetcode.timeoutMs);
     s.endGroup();
 
     s.setValue("recent/files", m_recentFiles);
