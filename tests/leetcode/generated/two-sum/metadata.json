@@ -1,0 +1,33 @@
+{
+    "id": 1,
+    "questionId": "1",
+    "slug": "two-sum",
+    "title": "Two Sum",
+    "difficulty": "Easy",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/two-sum/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "unordered",
+    "meta": {
+        "name": "twoSum",
+        "params": [
+            {
+                "name": "nums",
+                "type": "integer[]"
+            },
+            {
+                "name": "target",
+                "type": "integer"
+            }
+        ],
+        "returnType": "integer[]",
+        "systemDesign": false,
+        "manual": false
+    },
+    "starterCode": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        \n    }\n};",
+    "signatureHash": "f05ab7dda23ce64e",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
