@@ -1,0 +1,29 @@
+{
+    "id": 200,
+    "questionId": "200",
+    "slug": "number-of-islands",
+    "title": "Number of Islands",
+    "difficulty": "Medium",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/number-of-islands/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "exact",
+    "meta": {
+        "name": "numIslands",
+        "params": [
+            {
+                "name": "grid",
+                "type": "character[][]"
+            }
+        ],
+        "returnType": "integer",
+        "systemDesign": false,
+        "manual": true
+    },
+    "starterCode": "class Solution {\npublic:\n    int numIslands(vector<vector<char>>& grid) {\n        \n    }\n};",
+    "signatureHash": "d582669b25271bf0",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
