@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(LightIDE
-    VERSION 0.1.0
+    VERSION 0.2.0
     DESCRIPTION "Lightweight C/C++ IDE, a modern Dev-C++ alternative"
     LANGUAGES CXX)
 
@@ -18,7 +18,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 option(LIGHTIDE_BUILD_TESTS "Build the automated tests" ON)
 
-find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets Svg)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Network Widgets Svg)
 find_package(QScintilla REQUIRED)
 
 qt_standard_project_setup()
