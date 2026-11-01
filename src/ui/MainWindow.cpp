@@ -109,8 +109,7 @@ MainWindow::MainWindow(Settings *settings, QWidget *parent)
     m_horizontalSplitter->restoreState(store.value("window/horizontalSplitter").toByteArray());
     m_verticalSplitter->restoreState(store.value("window/verticalSplitter").toByteArray());
 
-    const QString rootFolder = store.value("sidebar/rootFolder", QDir::homePath()).toString();
-    m_sidebar->setRootFolder(rootFolder);
+    showFolderInSidebar();
 
     applySettings();
     rebuildRecentMenus();
@@ -160,6 +159,9 @@ void MainWindow::createActions()
         m_editors->newDocument(SourceLanguage::C);
     });
     addAction("open", tr("&Open File..."), "open", QKeySequence::Open, [this] { openFileDialog(); });
+    addAction("openFolder", tr("Open &Folder..."), QString(), QKeySequence(tr("Ctrl+Shift+O")),
+              [this] { openFolderDialog(); });
+    addAction("closeFolder", tr("Close Fol&der"), QString(), QKeySequence(), [this] { closeFolder(); });
     addAction("save", tr("&Save"), "save", QKeySequence::Save, withEditor([this](CodeEditor *e) {
         m_editors->save(e);
     }));
@@ -327,9 +329,10 @@ void MainWindow::createMenus()
     };
 
     QMenu *file = menuBar()->addMenu(tr("&File"));
-    addAll(file, {"newCpp", "newC", "open"});
+    addAll(file, {"newCpp", "newC", "open", "openFolder"});
     m_recentFilesMenu = file->addMenu(tr("Recent &Files"));
-    addAll(file, {"", "save", "saveAs", "saveAll", "", "closeTab", "closeAll", "", "quit"});
+    m_recentFoldersMenu = file->addMenu(tr("Recent F&olders"));
+    addAll(file, {"", "save", "saveAs", "saveAll", "", "closeTab", "closeAll", "closeFolder", "", "quit"});
 
     QMenu *edit = menuBar()->addMenu(tr("&Edit"));
     addAll(edit, {"undo", "redo", "", "cut", "copy", "paste", "selectAll", "", "toggleComment"});
@@ -509,7 +512,8 @@ void MainWindow::connectComponents()
         statusBar()->showMessage(message, statusMessageMs);
     });
     connect(m_editors, &EditorWidget::fileOpened, this, [this](const QString &path) {
-        if (!m_settings->store().contains("sidebar/rootFolder"))
+        // With no folder chosen, the sidebar shows wherever the user is working.
+        if (currentFolder().isEmpty() && !m_project)
             m_sidebar->setRootFolder(QFileInfo(path).absolutePath());
     });
     connect(m_editors, &EditorWidget::breakpointToggled, this,
@@ -525,6 +529,7 @@ void MainWindow::connectComponents()
     connect(m_welcome, &WelcomeWidget::newCppRequested, action("newCpp"), &QAction::trigger);
     connect(m_welcome, &WelcomeWidget::newCRequested, action("newC"), &QAction::trigger);
     connect(m_welcome, &WelcomeWidget::openRequested, action("open"), &QAction::trigger);
+    connect(m_welcome, &WelcomeWidget::openFolderRequested, action("openFolder"), &QAction::trigger);
     connect(m_welcome, &WelcomeWidget::recentActivated, this,
             [this](const QString &path) { m_editors->openFile(path); });
 
@@ -540,9 +545,7 @@ void MainWindow::connectComponents()
         m_symbolsVisible = visible;
         refreshSymbols();
     });
-    connect(m_sidebar, &Sidebar::rootFolderChanged, this, [this](const QString &path) {
-        m_settings->store().setValue("sidebar/rootFolder", path);
-    });
+    connect(m_sidebar, &Sidebar::openFolderRequested, action("openFolder"), &QAction::trigger);
     connect(m_sidebar, &Sidebar::newProjectFileRequested, this, &MainWindow::newProjectFile);
     connect(m_sidebar, &Sidebar::addProjectFilesRequested, this, &MainWindow::addFilesToProject);
     connect(m_sidebar, &Sidebar::newProjectFolderRequested, this, &MainWindow::newProjectFolder);
@@ -728,6 +731,8 @@ void MainWindow::updateActions()
         action(QLatin1String(name))->setVisible(debugging);
     }
 
+    action("closeFolder")->setEnabled(!currentFolder().isEmpty());
+
     const bool hasProject = m_project != nullptr;
     for (const char *name : {"closeProject", "addFiles", "newProjectFile", "projectOptions"})
         action(QLatin1String(name))->setEnabled(hasProject);
@@ -742,8 +747,11 @@ void MainWindow::updateWindowTitle()
             title.prepend(QStringLiteral("● "));
         title += QStringLiteral(" — ");
     }
+    const QString folder = currentFolder();
     if (m_project)
         title += m_project->name + QStringLiteral(" — ");
+    else if (!folder.isEmpty())
+        title += QFileInfo(folder).fileName() + QStringLiteral(" — ");
     setWindowTitle(title + QStringLiteral("LightIDE"));
 }
 
@@ -811,6 +819,8 @@ void MainWindow::rebuildRecentMenus()
          [this](const QString &path) { m_editors->openFile(path); });
     fill(m_recentProjectsMenu, m_settings->recentProjects(),
          [this](const QString &path) { openProject(path); });
+    fill(m_recentFoldersMenu, m_settings->recentFolders(),
+         [this](const QString &path) { openFolder(path); });
     m_welcome->setRecentFiles(m_settings->recentFiles());
 }
 
@@ -853,7 +863,9 @@ void MainWindow::setSidebarVisible(bool visible)
 void MainWindow::openPaths(const QStringList &paths)
 {
     for (const QString &path : paths) {
-        if (path.endsWith(QStringLiteral(".") + QLatin1String(Project::extension)))
+        if (QFileInfo(path).isDir())
+            openFolder(path);
+        else if (path.endsWith(QStringLiteral(".") + QLatin1String(Project::extension)))
             openProject(path);
         else
             m_editors->openFile(path);
@@ -870,13 +882,70 @@ void MainWindow::openFileDialog()
                                             FileManager::openFileFilter()));
 }
 
+QString MainWindow::currentFolder() const
+{
+    // A saved folder that is gone for now, such as on an unmounted drive, stays
+    // remembered but isn't treated as open.
+    const QString folder = m_settings->store().value("sidebar/rootFolder").toString();
+    return !folder.isEmpty() && QFileInfo(folder).isDir() ? folder : QString();
+}
+
+void MainWindow::showFolderInSidebar()
+{
+    const QString folder = currentFolder();
+    const QString shown = folder.isEmpty() ? QDir::homePath() : folder;
+    m_sidebar->setRootFolder(shown, !folder.isEmpty());
+    m_editors->setDefaultDirectory(shown);
+}
+
+void MainWindow::openFolderDialog()
+{
+    const QString path = QFileDialog::getExistingDirectory(this, tr("Open Folder"), m_sidebar->rootFolder());
+    if (!path.isEmpty())
+        openFolder(path);
+}
+
+void MainWindow::openFolder(const QString &path)
+{
+    const QFileInfo info(path);
+    if (!info.isDir()) {
+        QMessageBox::warning(this, tr("Could Not Open Folder"),
+                             tr("\"%1\" is not a folder.").arg(path));
+        return;
+    }
+
+    const QString folder = info.canonicalFilePath();
+    m_settings->store().setValue("sidebar/rootFolder", folder);
+    m_settings->store().sync();
+    m_settings->addRecentFolder(folder);
+
+    showFolderInSidebar();
+    m_sidebar->setCurrentIndex(Sidebar::FilesTab);
+    setSidebarVisible(true);
+    action("toggleSidebar")->setChecked(true);
+    updateWindowTitle();
+    updateActions();
+}
+
+void MainWindow::closeFolder()
+{
+    m_settings->store().remove("sidebar/rootFolder");
+    m_settings->store().sync();
+    showFolderInSidebar();
+    updateWindowTitle();
+    updateActions();
+}
+
 void MainWindow::setProject(std::unique_ptr<Project> project)
 {
     m_project = std::move(project);
     m_sidebar->setProject(m_project.get());
     if (m_project) {
         m_sidebar->setRootFolder(m_project->directory());
+        m_editors->setDefaultDirectory(m_project->directory());
         m_settings->addRecentProject(m_project->filePath());
+    } else {
+        showFolderInSidebar();
     }
     updateActions();
     updateWindowTitle();
