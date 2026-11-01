@@ -1,0 +1,48 @@
+# Builds the snap and checks that it installs and starts. A version tag also
+# publishes it, once the SNAPCRAFT_STORE_CREDENTIALS secret has been added.
+
+name: Snap
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - snap/**
+      - .github/workflows/snap.yml
+      - CMakeLists.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snap:
+    runs-on: ubuntu-24.04
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: snapcore/action-build@v1
+        id: build
+
+      - name: Install and start the snap
+        env:
+          SNAP_FILE: ${{ steps.build.outputs.snap }}
+        run: |
+          sudo snap install --dangerous --classic "$SNAP_FILE"
+          lightide --version
+          QT_QPA_PLATFORM=offscreen timeout 5 lightide || test $? -eq 124
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lightide-snap
+          path: ${{ steps.build.outputs.snap }}
+          if-no-files-found: error
+
+      - uses: snapcore/action-publish@v1
+        if: github.ref_type == 'tag' && env.SNAPCRAFT_STORE_CREDENTIALS != ''
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: stable
