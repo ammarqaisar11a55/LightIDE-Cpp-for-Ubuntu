@@ -1,0 +1,29 @@
+{
+    "id": 49,
+    "questionId": "49",
+    "slug": "group-anagrams",
+    "title": "Group Anagrams",
+    "difficulty": "Medium",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/group-anagrams/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "unordered-deep",
+    "meta": {
+        "name": "groupAnagrams",
+        "params": [
+            {
+                "name": "strs",
+                "type": "string[]"
+            }
+        ],
+        "returnType": "list<list<string>>",
+        "systemDesign": false,
+        "manual": false
+    },
+    "starterCode": "class Solution {\npublic:\n    vector<vector<string>> groupAnagrams(vector<string>& strs) {\n        \n    }\n};",
+    "signatureHash": "ba28dac1953074bc",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
