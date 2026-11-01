@@ -1,0 +1,65 @@
+{
+    "id": 146,
+    "questionId": "146",
+    "slug": "lru-cache",
+    "title": "LRU Cache",
+    "difficulty": "Medium",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/lru-cache/",
+    "support": "design",
+    "harness": "generated",
+    "comparison": "exact",
+    "meta": {
+        "name": "LRUCache",
+        "params": [
+            {
+                "name": "inputs",
+                "type": "integer[]"
+            },
+            {
+                "name": "inputs",
+                "type": "integer[]"
+            }
+        ],
+        "returnType": "list<String>",
+        "systemDesign": true,
+        "manual": false,
+        "constructorParams": [
+            {
+                "name": "capacity",
+                "type": "integer"
+            }
+        ],
+        "methods": [
+            {
+                "name": "get",
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "integer"
+                    }
+                ],
+                "returnType": "integer"
+            },
+            {
+                "name": "put",
+                "params": [
+                    {
+                        "name": "key",
+                        "type": "integer"
+                    },
+                    {
+                        "name": "value",
+                        "type": "integer"
+                    }
+                ],
+                "returnType": "void"
+            }
+        ]
+    },
+    "starterCode": "class LRUCache {\npublic:\n    LRUCache(int capacity) {\n        \n    }\n    \n    int get(int key) {\n        \n    }\n    \n    void put(int key, int value) {\n        \n    }\n};\n\n/**\n * Your LRUCache object will be instantiated and called as such:\n * LRUCache* obj = new LRUCache(capacity);\n * int param_1 = obj->get(key);\n * obj->put(key,value);\n */",
+    "signatureHash": "329955385b6bc599",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
