@@ -19,6 +19,7 @@ signals:
     void newCppRequested();
     void newCRequested();
     void openRequested();
+    void openFolderRequested();
     void recentActivated(const QString &path);
 
 private:
