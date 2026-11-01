@@ -21,15 +21,18 @@ WelcomeWidget::WelcomeWidget(QWidget *parent)
     auto *newCpp = new QPushButton(tr("New C++ File"));
     auto *newC = new QPushButton(tr("New C File"));
     auto *open = new QPushButton(tr("Open File..."));
+    auto *openFolder = new QPushButton(tr("Open Folder..."));
     newCpp->setDefault(true);
     connect(newCpp, &QPushButton::clicked, this, &WelcomeWidget::newCppRequested);
     connect(newC, &QPushButton::clicked, this, &WelcomeWidget::newCRequested);
     connect(open, &QPushButton::clicked, this, &WelcomeWidget::openRequested);
+    connect(openFolder, &QPushButton::clicked, this, &WelcomeWidget::openFolderRequested);
 
     auto *buttons = new QHBoxLayout;
     buttons->addWidget(newCpp);
     buttons->addWidget(newC);
     buttons->addWidget(open);
+    buttons->addWidget(openFolder);
     buttons->addStretch();
 
     m_recentLabel->setObjectName(QStringLiteral("welcomeHint"));
