@@ -768,6 +768,129 @@ private slots:
         QVERIFY(bytes.contains("int b;\r\n"));
     }
 
+    // --- Folders ---------------------------------------------------------------
+
+    void openFolderBecomesTheWorkspace()
+    {
+        writeText(path("workspace/a.cpp"), "int a;\n");
+        QVERIFY(!action("closeFolder")->isEnabled());
+
+        m_window->openFolder(path("workspace"));
+
+        const QString folder = QFileInfo(path("workspace")).canonicalFilePath();
+        QCOMPARE(m_window->currentFolder(), folder);
+        QCOMPARE(m_window->sidebar()->rootFolder(), folder);
+        QCOMPARE(m_window->sidebar()->currentIndex(), int(Sidebar::FilesTab));
+        QVERIFY(m_window->windowTitle().contains("workspace"));
+        QVERIFY(action("closeFolder")->isEnabled());
+        QCOMPARE(m_settings->recentFolders().first(), folder);
+
+        auto *model = qobject_cast<QFileSystemModel *>(m_window->sidebar()->fileTree()->model());
+        QVERIFY(model);
+        QCOMPARE(model->filePath(m_window->sidebar()->fileTree()->rootIndex()), folder);
+        QTRY_COMPARE_WITH_TIMEOUT(model->rowCount(m_window->sidebar()->fileTree()->rootIndex()), 1, 5000);
+    }
+
+    void folderReopensAfterARestart()
+    {
+        QDir().mkpath(path("workspace"));
+        m_window->openFolder(path("workspace"));
+        const QString folder = m_window->currentFolder();
+        QVERIFY(!folder.isEmpty());
+
+        m_window->close();
+        m_window.reset();
+        m_settings.reset(new Settings(m_dir->filePath("settings.ini")));
+        m_settings->load();
+        m_window.reset(new MainWindow(m_settings.data()));
+        m_window->show();
+
+        QCOMPARE(m_window->currentFolder(), folder);
+        QCOMPARE(m_window->sidebar()->rootFolder(), folder);
+        QVERIFY(m_settings->recentFolders().contains(folder));
+    }
+
+    void newFilesSaveIntoTheFolderByDefault()
+    {
+        QDir().mkpath(path("workspace"));
+        m_window->openFolder(path("workspace"));
+        CodeEditor *e = m_window->editors()->newDocument(SourceLanguage::Cpp);
+        const QString suggested = m_window->editors()->suggestedSavePath(e);
+        QCOMPARE(QFileInfo(suggested).absolutePath(), m_window->currentFolder());
+        QVERIFY(suggested.endsWith(".cpp"));
+    }
+
+    void openingAFileKeepsTheChosenFolder()
+    {
+        QDir().mkpath(path("workspace"));
+        m_window->openFolder(path("workspace"));
+        const QString folder = m_window->currentFolder();
+        open("elsewhere/b.cpp", "int b;\n");
+        QCOMPARE(m_window->sidebar()->rootFolder(), folder);
+    }
+
+    void openPathsAcceptsAFolder()
+    {
+        QDir().mkpath(path("from command line"));
+        m_window->openPaths({path("from command line")});
+        QCOMPARE(QFileInfo(m_window->currentFolder()).fileName(), QString("from command line"));
+        QCOMPARE(m_window->editors()->count(), 0);
+    }
+
+    void closeFolderForgetsIt()
+    {
+        QDir().mkpath(path("workspace"));
+        m_window->openFolder(path("workspace"));
+        action("closeFolder")->trigger();
+        QVERIFY(m_window->currentFolder().isEmpty());
+        QCOMPARE(m_window->sidebar()->rootFolder(), QDir::homePath());
+        QVERIFY(!action("closeFolder")->isEnabled());
+    }
+
+    void aMissingSavedFolderFallsBackQuietly()
+    {
+        QDir().mkpath(path("gone"));
+        m_window->openFolder(path("gone"));
+        QVERIFY(QDir(path("gone")).removeRecursively());
+
+        m_window->close();
+        m_window.reset();
+        m_settings.reset(new Settings(m_dir->filePath("settings.ini")));
+        m_settings->load();
+        m_window.reset(new MainWindow(m_settings.data()));
+        QVERIFY(m_window->currentFolder().isEmpty());
+        QCOMPARE(m_window->sidebar()->rootFolder(), QDir::homePath());
+    }
+
+    void openingAFileThatIsNotAFolderExplains()
+    {
+        answerNextDialog(QMessageBox::Ok);
+        m_window->openFolder(path("does-not-exist"));
+        QVERIFY(m_window->currentFolder().isEmpty());
+    }
+
+    void closingAProjectReturnsToTheFolder()
+    {
+        QDir().mkpath(path("workspace"));
+        m_window->openFolder(path("workspace"));
+        const QString folder = m_window->currentFolder();
+
+        writeText(path("p/main.cpp"), "int main() { return 0; }\n");
+        Project project = Project::create(path("p"), "demo", true);
+        QString error;
+        QVERIFY(project.save(&error));
+        QVERIFY(m_window->openProject(project.filePath()));
+        QCOMPARE(m_window->sidebar()->rootFolder(), m_window->project()->directory());
+
+        action("closeProject")->trigger();
+        QCOMPARE(m_window->sidebar()->rootFolder(), folder);
+    }
+
+    void openFolderHasItsShortcut()
+    {
+        QCOMPARE(action("openFolder")->shortcut(), QKeySequence("Ctrl+Shift+O"));
+    }
+
     // --- Editor behaviour ----------------------------------------------------
 
     void autoIndentAndBracePairs()
