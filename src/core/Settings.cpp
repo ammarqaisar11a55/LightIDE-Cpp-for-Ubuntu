@@ -133,6 +133,7 @@ void Settings::load()
 
     m_recentFiles = s.value("recent/files").toStringList();
     m_recentProjects = s.value("recent/projects").toStringList();
+    m_recentFolders = s.value("recent/folders").toStringList();
 }
 
 void Settings::save()
@@ -194,6 +195,7 @@ void Settings::save()
 
     s.setValue("recent/files", m_recentFiles);
     s.setValue("recent/projects", m_recentProjects);
+    s.setValue("recent/folders", m_recentFolders);
     s.sync();
 }
 
@@ -211,10 +213,18 @@ void Settings::addRecentProject(const QString &path)
     emit recentChanged();
 }
 
+void Settings::addRecentFolder(const QString &path)
+{
+    pushRecent(m_recentFolders, path);
+    m_store->setValue("recent/folders", m_recentFolders);
+    emit recentChanged();
+}
+
 void Settings::clearRecent()
 {
     m_recentFiles.clear();
     m_recentProjects.clear();
+    m_recentFolders.clear();
     m_store->remove(QStringLiteral("recent"));
     emit recentChanged();
 }
