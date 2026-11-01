@@ -4,11 +4,17 @@
 #include "core/SymbolScanner.h"
 #include "editor/CodeEditor.h"
 #include "filesystem/FileManager.h"
+#include "leetcode/LeetCodeClient.h"
+#include "leetcode/QuestionParser.h"
+#include "leetcode/SolutionFile.h"
+#include "leetcode/TestSuiteRunner.h"
 #include "project/Project.h"
+#include "ui/AddTestDialog.h"
 #include "ui/DebugPanel.h"
 #include "ui/EditorWidget.h"
 #include "ui/FindBar.h"
 #include "ui/FindInFilesDialog.h"
+#include "ui/LeetCodePanel.h"
 #include "ui/OutputPanel.h"
 #include "ui/ProjectDialogs.h"
 #include "ui/SettingsDialog.h"
@@ -20,9 +26,11 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDragEnterEvent>
@@ -35,11 +43,13 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QRegularExpression>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QUrl>
 #include <QVBoxLayout>
 
 namespace {
@@ -77,6 +87,8 @@ MainWindow::MainWindow(Settings *settings, QWidget *parent)
     , m_findBar(new FindBar)
     , m_output(new OutputPanel)
     , m_sidebar(new Sidebar)
+    , m_leetCodeClient(new LeetCodeClient(this))
+    , m_testRunner(new TestSuiteRunner(this))
     , m_horizontalSplitter(new QSplitter(Qt::Horizontal))
     , m_verticalSplitter(new QSplitter(Qt::Vertical))
 {
@@ -85,6 +97,7 @@ MainWindow::MainWindow(Settings *settings, QWidget *parent)
     resize(1180, 760);
 
     createActions();
+    createLeetCodeActions();
     createMenus();
     createToolBar();
     createCentralArea();
@@ -283,6 +296,25 @@ void MainWindow::createActions()
     addAction("about", tr("&About LightIDE"), QString(), QKeySequence(), [this] { showAbout(); });
 }
 
+void MainWindow::createLeetCodeActions()
+{
+    addAction("lcFetch", tr("&Fetch Problem..."), QString(), QKeySequence(tr("Ctrl+Alt+F")),
+              [this] { promptFetchProblem(); });
+    addAction("lcRun", tr("&Run Tests"), QString(), QKeySequence(tr("Ctrl+Shift+B")),
+              [this] { runLeetCodeTests(); });
+    addAction("lcRunCurrent", tr("Run &Current Test"), QString(), QKeySequence(tr("Ctrl+Alt+R")),
+              [this] { runCurrentTest(); });
+    addAction("lcDebug", tr("&Debug Solution"), QString(), QKeySequence(), [this] { debugSolution(); });
+    addAction("lcCopy", tr("&Copy Solution"), QString(), QKeySequence(tr("Ctrl+Alt+C")),
+              [this] { copySolution(); });
+    addAction("lcAddTest", tr("&Add Custom Test..."), QString(), QKeySequence(), [this] { addCustomTest(); });
+    addAction("lcEditTests", tr("&Edit Tests (tests.json)"), QString(), QKeySequence(), [this] { editTests(); });
+    addAction("lcRefresh", tr("Refres&h Problem"), QString(), QKeySequence(), [this] { refreshProblem(); });
+    addAction("lcBrowser", tr("Open in &Browser"), QString(), QKeySequence(), [this] { openProblemInBrowser(); });
+    addAction("lcConnect", tr("Connect &Account..."), QString(), QKeySequence(), [this] { connectAccount(); });
+    addAction("lcDisconnect", tr("Dis&connect Account"), QString(), QKeySequence(), [this] { disconnectAccount(); });
+}
+
 void MainWindow::createMenus()
 {
     const auto addAll = [this](QMenu *menu, const QStringList &names) {
@@ -339,6 +371,10 @@ void MainWindow::createMenus()
 
     QMenu *debug = menuBar()->addMenu(tr("&Debug"));
     addAll(debug, {"debug", "stop", "", "stepOver", "stepInto", "stepOut", "", "toggleBreakpoint"});
+
+    QMenu *leetCode = menuBar()->addMenu(tr("&LeetCode"));
+    addAll(leetCode, {"lcFetch", "", "lcRun", "lcRunCurrent", "lcDebug", "", "lcCopy", "lcBrowser", "",
+                      "lcAddTest", "lcEditTests", "lcRefresh", "", "lcConnect", "lcDisconnect"});
 
     QMenu *tools = menuBar()->addMenu(tr("&Tools"));
     addAll(tools, {"settings", "compilerStatus"});
@@ -433,6 +469,9 @@ void MainWindow::createStatusBar()
     m_eolLabel = new QLabel;
     m_languageLabel = new QLabel;
     m_toolLabel = new QLabel(tr("Detecting compilers..."));
+    m_leetCodeLabel = new QLabel;
+    m_leetCodeLabel->hide();
+    statusBar()->addPermanentWidget(m_leetCodeLabel);
     statusBar()->addPermanentWidget(m_cursorLabel);
     statusBar()->addPermanentWidget(m_indentLabel);
     statusBar()->addPermanentWidget(m_eolLabel);
@@ -567,6 +606,23 @@ void MainWindow::connectComponents()
     });
     connect(m_debugger, &DebuggerManager::sessionEnded, this, &MainWindow::onDebugSessionEnded);
 
+    LeetCodePanel *leetCode = m_output->leetCodePanel();
+    connect(leetCode, &LeetCodePanel::fetchRequested, this, &MainWindow::promptFetchProblem);
+    connect(leetCode, &LeetCodePanel::problemActivated, this, &MainWindow::openProblemFolder);
+    connect(leetCode, &LeetCodePanel::testActivated, this, &MainWindow::goToTest);
+    connect(m_output, &QTabWidget::currentChanged, this, [this, leetCode](int index) {
+        if (index == OutputPanel::LeetCodeTab)
+            leetCode->refreshProblems();
+    });
+    connect(m_leetCodeClient, &LeetCodeClient::problemFetched, this, &MainWindow::onProblemFetched);
+    connect(m_leetCodeClient, &LeetCodeClient::fetchFailed, this, [this](const QString &message) {
+        m_refreshDirectory.clear();
+        statusBar()->showMessage(tr("Could not fetch the problem"), statusMessageMs);
+        QMessageBox::warning(this, tr("Could Not Fetch Problem"), message);
+    });
+    connect(m_testRunner, &TestSuiteRunner::testFinished, leetCode, &LeetCodePanel::addResult);
+    connect(m_testRunner, &TestSuiteRunner::finished, this, &MainWindow::onTestsFinished);
+
     connect(m_output->debugPanel(), &DebugPanel::frameActivated, m_debugger, &DebuggerManager::selectFrame);
     connect(m_output->debugPanel(), &DebugPanel::commandEntered, this, [this](const QString &command) {
         m_output->debugPanel()->appendConsole(QStringLiteral("(gdb) ") + command + QLatin1Char('\n'));
@@ -585,6 +641,7 @@ void MainWindow::applySettings()
     Theme::apply(*qApp, appearance.theme);
     applyIconColors();
     m_output->setTheme(appearance.theme);
+    m_output->leetCodePanel()->setProblemsDirectory(m_settings->leetcode.directory());
     m_editors->applySettings();
 
     const QSignalBlocker sidebarBlocker(action("toggleSidebar"));
@@ -656,7 +713,7 @@ void MainWindow::updateActions()
     action("rebuild")->setEnabled(canBuild);
     action("clean")->setEnabled(canBuild);
     action("runOptions")->setEnabled(hasEditor || m_project);
-    action("stop")->setEnabled(building || running || debugging);
+    action("stop")->setEnabled(building || running || debugging || m_testRunner->isRunning());
 
     action("debug")->setEnabled(paused || (!debugging && canBuild));
     action("debug")->setText(paused ? tr("&Continue") : tr("Start &Debugging"));
@@ -1054,6 +1111,18 @@ std::optional<BuildPlan> MainWindow::makeSingleFilePlan(CodeEditor *editor,
     return plan;
 }
 
+void MainWindow::startPlan(const BuildPlan &plan, AfterBuild after)
+{
+    m_afterBuild = after;
+    m_buildDiagnostics.clear();
+    m_editors->clearDiagnostics();
+    m_output->clearBuild();
+    showPanel(OutputPanel::CompilerTab);
+    statusBar()->showMessage(tr("Building..."));
+    m_build->start(plan);
+    updateActions();
+}
+
 void MainWindow::startBuild(AfterBuild after, BuildConfiguration configuration)
 {
     if (m_build->isRunning())
@@ -1072,17 +1141,8 @@ void MainWindow::startBuild(AfterBuild after, BuildConfiguration configuration)
             return;
         plan = makeSingleFilePlan(editor, configuration);
     }
-    if (!plan)
-        return;
-
-    m_afterBuild = after;
-    m_buildDiagnostics.clear();
-    m_editors->clearDiagnostics();
-    m_output->clearBuild();
-    showPanel(OutputPanel::CompilerTab);
-    statusBar()->showMessage(tr("Building..."));
-    m_build->start(*plan);
-    updateActions();
+    if (plan)
+        startPlan(*plan, after);
 }
 
 void MainWindow::onBuildFinished(const BuildResult &result)
@@ -1122,13 +1182,43 @@ void MainWindow::onBuildFinished(const BuildResult &result)
     }
     emit buildReported(result);
 
-    if (!result.success)
+    if (!result.success) {
+        if (after == AfterBuild::LeetCodeTests) {
+            m_output->leetCodePanel()->showStatus(tr("The solution did not compile. See Build Messages."));
+            m_activeProblem.reset();
+        }
         return;
-    if (after == AfterBuild::Run) {
+    }
+
+    switch (after) {
+    case AfterBuild::Run:
         if (const auto target = currentRunTarget())
             launch(*target);
-    } else if (after == AfterBuild::Debug) {
+        break;
+    case AfterBuild::Debug:
         beginDebugSession();
+        break;
+    case AfterBuild::LeetCodeTests: {
+        const ProblemFolder folder = *m_activeProblem;
+        const LeetCodeRunSettings settings = leetCodeRunSettings();
+        if (!result.upToDate)
+            folder.markBuilt(settings, false);
+        const ProblemMetadata metadata = folder.readMetadata();
+        showPanel(OutputPanel::LeetCodeTab);
+        m_output->leetCodePanel()->showStatus(tr("Running tests..."));
+        m_testRunner->start(folder, metadata, folder.readTests(metadata), settings, m_onlyTests);
+        updateActions();
+        break;
+    }
+    case AfterBuild::LeetCodeDebug: {
+        const ProblemFolder folder = *m_activeProblem;
+        if (!result.upToDate)
+            folder.markBuilt(leetCodeRunSettings(), true);
+        beginDebugSession(RunTarget{folder.binaryPath(true), {}, {}, folder.directory()});
+        break;
+    }
+    case AfterBuild::Nothing:
+        break;
     }
 }
 
@@ -1320,12 +1410,15 @@ void MainWindow::beginDebugSession()
     m_settings->compiler.configuration = BuildConfiguration::Debug;
     const auto target = currentRunTarget();
     m_settings->compiler.configuration = selected;
-    if (!target)
-        return;
+    if (target)
+        beginDebugSession(*target);
+}
 
+void MainWindow::beginDebugSession(const RunTarget &target)
+{
     TerminalView *terminal = m_output->terminal();
     terminal->clearAll();
-    terminal->appendStatus(tr("Debugging %1").arg(target->program),
+    terminal->appendStatus(tr("Debugging %1").arg(target.program),
                            Theme::colors(m_settings->appearance.theme).textMuted);
     m_output->debugPanel()->clearAll();
 
@@ -1335,11 +1428,11 @@ void MainWindow::beginDebugSession()
 
     DebugRequest request;
     request.gdbPath = m_settings->compiler.gdbPath;
-    request.program = target->program;
-    request.arguments = target->argumentText;
-    request.workingDirectory = target->workingDirectory.isEmpty()
-                                   ? QFileInfo(target->program).absolutePath()
-                                   : target->workingDirectory;
+    request.program = target.program;
+    request.arguments = target.argumentText;
+    request.workingDirectory = target.workingDirectory.isEmpty()
+                                   ? QFileInfo(target.program).absolutePath()
+                                   : target.workingDirectory;
     request.breakpoints = collectBreakpoints();
     m_debugger->start(request);
     updateActions();
@@ -1383,6 +1476,8 @@ void MainWindow::stop()
         m_debugger->stop();
     if (m_runner->isRunning())
         m_runner->stop();
+    if (m_testRunner->isRunning())
+        m_testRunner->cancel();
 }
 
 void MainWindow::showRunOptions()
@@ -1431,6 +1526,333 @@ void MainWindow::showCompilerStatus()
                          CompilerManager::installHint().toHtmlEscaped());
     }
     QMessageBox::information(this, tr("Compiler Status"), text);
+}
+
+// ---------------------------------------------------------------------------
+// LeetCode
+// ---------------------------------------------------------------------------
+
+LeetCodeRunSettings MainWindow::leetCodeRunSettings() const
+{
+    LeetCodeRunSettings settings;
+    settings.compiler = m_settings->compiler.gxxPath;
+    settings.standard = m_settings->leetcode.standard;
+    settings.flags = CompileCommand::splitArguments(m_settings->leetcode.flags);
+    settings.sanitizers = m_settings->leetcode.sanitizers;
+    settings.timeoutMs = m_settings->leetcode.timeoutMs;
+    return settings;
+}
+
+std::optional<ProblemFolder> MainWindow::currentProblem()
+{
+    if (CodeEditor *editor = m_editors->currentEditor()) {
+        const QString directory = ProblemFolder::folderOfSolution(editor->filePath());
+        if (!directory.isEmpty())
+            return ProblemFolder(directory);
+    }
+    QMessageBox::information(this, tr("No Problem Open"),
+                             tr("Open a problem's solution.cpp first, or fetch one with LeetCode > Fetch Problem."));
+    return std::nullopt;
+}
+
+void MainWindow::promptFetchProblem()
+{
+    // A problem link on the clipboard is almost always the one to fetch.
+    const QString clipboard = QApplication::clipboard()->text().trimmed();
+    const QString suggestion = clipboard.contains(QLatin1String("leetcode.")) ? clipboard : QString();
+
+    bool accepted = false;
+    const QString reference = QInputDialog::getText(
+        this, tr("Fetch Problem"), tr("Problem URL, slug or title:"), QLineEdit::Normal, suggestion, &accepted);
+    if (accepted)
+        fetchProblem(reference);
+}
+
+void MainWindow::fetchProblem(const QString &reference)
+{
+    try {
+        const QString slug = QuestionParser::parseProblemReference(reference);
+        statusBar()->showMessage(tr("Fetching %1...").arg(slug));
+        m_leetCodeClient->fetchProblem(slug);
+    } catch (const LcError &error) {
+        QMessageBox::warning(this, tr("Fetch Problem"), error.message());
+    }
+}
+
+void MainWindow::onProblemFetched(const LeetCodeProblem &problem)
+{
+    try {
+        if (!m_refreshDirectory.isEmpty()) {
+            const ProblemFolder folder(std::exchange(m_refreshDirectory, QString()));
+            const bool signatureChanged = folder.refresh(problem);
+            m_output->leetCodePanel()->showProblem(folder);
+            statusBar()->showMessage(tr("Refreshed %1").arg(problem.title), statusMessageMs);
+            if (signatureChanged) {
+                QMessageBox::information(this, tr("Signature Changed"),
+                                         tr("LeetCode changed this problem's method signature. Your "
+                                            "solution.cpp was not touched, so adapt it to the new "
+                                            "starter code:\n\n%1").arg(problem.starterCode));
+            }
+            return;
+        }
+
+        const QString directory = QDir(m_settings->leetcode.directory()).filePath(problem.slug);
+        const ProblemFolder folder(directory);
+        const QStringList warnings = folder.create(problem, false);
+
+        if (CodeEditor *editor = m_editors->openFile(folder.solutionPath())) {
+            Q_UNUSED(editor)
+            LeetCodePanel *panel = m_output->leetCodePanel();
+            panel->setProblemsDirectory(m_settings->leetcode.directory());
+            panel->showProblem(folder);
+            panel->showStatus(warnings.isEmpty()
+                                  ? tr("%1 is ready. Write your solution, then press Ctrl+Shift+B.").arg(problem.title)
+                                  : warnings.join(QLatin1Char('\n')));
+            showPanel(OutputPanel::LeetCodeTab);
+        }
+        statusBar()->showMessage(tr("Fetched %1").arg(problem.title), statusMessageMs);
+    } catch (const LcError &error) {
+        QMessageBox::warning(this, tr("Could Not Create Problem"), error.message());
+    }
+}
+
+// The harness is rewritten inside the editor, so that the undo history survives
+// and the file on disk never disagrees with the tab.
+CodeEditor *MainWindow::syncProblemEditor(const ProblemFolder &folder, const ProblemMetadata &metadata,
+                                          const QList<LcTestCase> &tests)
+{
+    CodeEditor *editor = m_editors->openFile(folder.solutionPath());
+    if (!editor)
+        return nullptr;
+
+    const QString current = editor->text();
+    const QString updated = LeetCodeBuilder::syncHarness(current, metadata, tests);
+    if (updated != current) {
+        qsizetype common = 0;
+        const qsizetype limit = std::min(current.size(), updated.size());
+        while (common < limit && current.at(common) == updated.at(common))
+            ++common;
+        const qsizetype lineStart = current.lastIndexOf(u'\n', common - 1) + 1;
+        const int line = static_cast<int>(current.left(lineStart).count(u'\n'));
+
+        int cursorLine, cursorIndex;
+        editor->getCursorPosition(&cursorLine, &cursorIndex);
+        const int lastLine = editor->lines() - 1;
+        editor->setSelection(line, 0, lastLine, editor->lineLength(lastLine));
+        editor->replaceSelectedText(updated.mid(lineStart));
+        editor->setCursorPosition(cursorLine, cursorIndex);
+    }
+    return m_editors->save(editor) ? editor : nullptr;
+}
+
+void MainWindow::buildProblem(AfterBuild after, const QList<int> &onlyTests)
+{
+    const auto folder = currentProblem();
+    if (!folder)
+        return;
+
+    whenIdle([this, folder = *folder, after, onlyTests] {
+        if (m_build->isRunning() || !checkCompilerFor(true, false))
+            return;
+        try {
+            const ProblemMetadata metadata = folder.readMetadata();
+            const QList<LcTestCase> tests = folder.readTests(metadata);
+            if (!syncProblemEditor(folder, metadata, tests))
+                return;
+
+            m_activeProblem = folder;
+            m_onlyTests = onlyTests;
+            LeetCodePanel *panel = m_output->leetCodePanel();
+            panel->clearResults();
+            panel->showProblem(folder);
+            panel->showStatus(tr("Compiling..."));
+            const bool debug = after == AfterBuild::LeetCodeDebug;
+            startPlan(folder.makeBuildPlan(metadata, leetCodeRunSettings(), debug), after);
+        } catch (const LcError &error) {
+            QMessageBox::warning(this, tr("LeetCode"), error.message());
+        }
+    });
+}
+
+void MainWindow::runLeetCodeTests(const QList<int> &onlyTests)
+{
+    buildProblem(AfterBuild::LeetCodeTests, onlyTests);
+}
+
+void MainWindow::debugSolution()
+{
+    if (!m_compilers->gdb().found && !m_compilers->detecting()) {
+        showMissingToolMessage(QStringLiteral("GDB"));
+        return;
+    }
+    buildProblem(AfterBuild::LeetCodeDebug, {});
+}
+
+void MainWindow::runCurrentTest()
+{
+    const auto folder = currentProblem();
+    if (!folder)
+        return;
+
+    // The test whose harness section holds the cursor.
+    CodeEditor *editor = m_editors->currentEditor();
+    int line, index;
+    editor->getCursorPosition(&line, &index);
+    static const QRegularExpression testComment(QStringLiteral(R"(^\s*// Test Case (\d+))"));
+    for (int i = line; i >= 0; --i) {
+        const auto match = testComment.match(editor->text(i));
+        if (match.hasMatch()) {
+            runLeetCodeTests({match.captured(1).toInt()});
+            return;
+        }
+    }
+
+    try {
+        const ProblemMetadata metadata = folder->readMetadata();
+        const QList<LcTestCase> tests = folder->readTests(metadata);
+        QStringList names;
+        for (const LcTestCase &test : tests)
+            names << QStringLiteral("%1: %2").arg(test.id).arg(test.name);
+        bool accepted = false;
+        const QString chosen = QInputDialog::getItem(this, tr("Run Test"), tr("Test to run:"), names, 0, false, &accepted);
+        if (accepted && !chosen.isEmpty())
+            runLeetCodeTests({chosen.section(QLatin1Char(':'), 0, 0).toInt()});
+    } catch (const LcError &error) {
+        QMessageBox::warning(this, tr("LeetCode"), error.message());
+    }
+}
+
+void MainWindow::onTestsFinished(const LcRunReport &report)
+{
+    if (!m_activeProblem)
+        return;
+
+    QString title = QFileInfo(m_activeProblem->directory()).fileName();
+    try {
+        title = m_activeProblem->readMetadata().title;
+    } catch (const LcError &) {
+        // The folder name will do.
+    }
+
+    m_output->leetCodePanel()->showReport(report, title);
+    m_leetCodeLabel->setText(QStringLiteral("LC: %1 | %2 %3/%4")
+                                 .arg(title, report.failed ? QString::fromUtf8("✗") : QString::fromUtf8("✓"))
+                                 .arg(report.passed)
+                                 .arg(report.total));
+    m_leetCodeLabel->show();
+    statusBar()->showMessage(tr("%1 of %2 tests passed").arg(report.passed).arg(report.total), statusMessageMs);
+    updateActions();
+}
+
+void MainWindow::copySolution()
+{
+    CodeEditor *editor = m_editors->currentEditor();
+    if (!currentProblem())
+        return;
+    try {
+        QApplication::clipboard()->setText(SolutionFile::extractSubmission(editor->text()));
+        statusBar()->showMessage(tr("Solution copied. Paste it into LeetCode and submit."), statusMessageMs);
+    } catch (const LcError &error) {
+        QMessageBox::warning(this, tr("Copy Solution"), error.message());
+    }
+}
+
+void MainWindow::addCustomTest()
+{
+    const auto folder = currentProblem();
+    if (!folder)
+        return;
+    try {
+        const ProblemMetadata metadata = folder->readMetadata();
+        AddTestDialog dialog(metadata, this);
+        if (dialog.exec() != QDialog::Accepted)
+            return;
+
+        QList<LcTestCase> tests = folder->readTests(metadata);
+        LcTestCase test = dialog.test();
+        test.id = static_cast<int>(tests.size()) + 1;
+        test.name = tr("Custom %1").arg(test.id);
+        tests.append(test);
+        folder->writeTests(metadata, tests);
+        statusBar()->showMessage(tr("Added test %1").arg(test.id), statusMessageMs);
+    } catch (const LcError &error) {
+        QMessageBox::warning(this, tr("Add Custom Test"), error.message());
+    }
+}
+
+void MainWindow::editTests()
+{
+    if (const auto folder = currentProblem())
+        m_editors->openFile(folder->testsPath());
+}
+
+void MainWindow::refreshProblem()
+{
+    const auto folder = currentProblem();
+    if (!folder)
+        return;
+    try {
+        m_refreshDirectory = folder->directory();
+        statusBar()->showMessage(tr("Refreshing..."));
+        m_leetCodeClient->fetchProblem(folder->readMetadata().slug);
+    } catch (const LcError &error) {
+        m_refreshDirectory.clear();
+        QMessageBox::warning(this, tr("Refresh Problem"), error.message());
+    }
+}
+
+void MainWindow::openProblemInBrowser()
+{
+    const auto folder = currentProblem();
+    if (!folder)
+        return;
+    try {
+        QDesktopServices::openUrl(QUrl(folder->readMetadata().url));
+    } catch (const LcError &error) {
+        QMessageBox::warning(this, tr("LeetCode"), error.message());
+    }
+}
+
+void MainWindow::connectAccount()
+{
+    bool accepted = false;
+    const QString session = QInputDialog::getText(
+        this, tr("Connect Account"),
+        tr("Only needed for Premium problems. Sign in to leetcode.com in your browser and paste\n"
+           "the value of its LEETCODE_SESSION cookie. It stays in memory until you close LightIDE\n"
+           "and is never written to disk."),
+        QLineEdit::Password, QString(), &accepted);
+    if (!accepted || session.trimmed().isEmpty())
+        return;
+    m_leetCodeClient->setSession(session.trimmed());
+    statusBar()->showMessage(tr("Connected for this session"), statusMessageMs);
+}
+
+void MainWindow::disconnectAccount()
+{
+    m_leetCodeClient->setSession({});
+    statusBar()->showMessage(tr("Disconnected"), statusMessageMs);
+}
+
+void MainWindow::openProblemFolder(const QString &directory)
+{
+    const ProblemFolder folder(directory);
+    m_editors->openFile(folder.solutionPath());
+    m_output->leetCodePanel()->showProblem(folder);
+}
+
+void MainWindow::goToTest(int id)
+{
+    CodeEditor *editor = m_editors->currentEditor();
+    if (!editor)
+        return;
+    const QRegularExpression comment(QStringLiteral(R"(^\s*// Test Case %1\b)").arg(id));
+    for (int line = 0; line < editor->lines(); ++line) {
+        if (comment.match(editor->text(line)).hasMatch()) {
+            editor->goToPosition(line + 1);
+            return;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
