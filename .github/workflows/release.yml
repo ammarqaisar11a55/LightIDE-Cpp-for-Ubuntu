@@ -34,7 +34,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
-            build-essential gdb cmake ninja-build dpkg-dev fonts-dejavu-core \
+            build-essential gdb cmake ninja-build dpkg-dev file fonts-dejavu-core \
             qt6-base-dev qt6-svg-dev libqscintilla2-qt6-dev
 
       - uses: actions/checkout@v7
