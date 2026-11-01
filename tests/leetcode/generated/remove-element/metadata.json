@@ -1,0 +1,37 @@
+{
+    "id": 27,
+    "questionId": "27",
+    "slug": "remove-element",
+    "title": "Remove Element",
+    "difficulty": "Easy",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/remove-element/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "unordered",
+    "meta": {
+        "name": "removeElement",
+        "params": [
+            {
+                "name": "nums",
+                "type": "integer[]"
+            },
+            {
+                "name": "val",
+                "type": "integer"
+            }
+        ],
+        "returnType": "integer",
+        "systemDesign": false,
+        "manual": false,
+        "output": {
+            "paramIndex": 0,
+            "size": "ret"
+        }
+    },
+    "starterCode": "class Solution {\npublic:\n    int removeElement(vector<int>& nums, int val) {\n        \n    }\n};",
+    "signatureHash": "a6871d635a1e103b",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
