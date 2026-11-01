@@ -1,0 +1,32 @@
+{
+    "id": 48,
+    "questionId": "48",
+    "slug": "rotate-image",
+    "title": "Rotate Image",
+    "difficulty": "Medium",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/rotate-image/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "exact",
+    "meta": {
+        "name": "rotate",
+        "params": [
+            {
+                "name": "matrix",
+                "type": "integer[][]"
+            }
+        ],
+        "returnType": "void",
+        "systemDesign": false,
+        "manual": false,
+        "output": {
+            "paramIndex": 0
+        }
+    },
+    "starterCode": "class Solution {\npublic:\n    void rotate(vector<vector<int>>& matrix) {\n        \n    }\n};",
+    "signatureHash": "ff4f208b0de18ebe",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
