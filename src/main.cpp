@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
     parser.addVersionOption();
     parser.addPositionalArgument(QStringLiteral("files"),
-                                 QStringLiteral("Source files or a .lideproj project to open."),
+                                 QStringLiteral("Source files, a folder or a .lideproj project to open."),
                                  QStringLiteral("[files...]"));
     parser.process(application);
 
