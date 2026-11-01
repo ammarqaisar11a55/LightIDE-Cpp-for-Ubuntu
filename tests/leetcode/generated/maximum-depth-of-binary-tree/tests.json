@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Example 1",
+        "source": "example",
+        "input": {
+            "root": [3, 9, 20, null, null, 15, 7]
+        },
+        "expected": 3
+    },
+    {
+        "name": "Example 2",
+        "source": "example",
+        "input": {
+            "root": [1, null, 2]
+        },
+        "expected": 2
+    }
+]
