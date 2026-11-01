@@ -96,6 +96,18 @@ use **Build > Run Options**. These are remembered per file. The executable is
 written next to the source unless you choose a default output directory in
 **Tools > Settings > Compiler**.
 
+### Working in a folder
+
+Use **File > Open Folder** (**Ctrl+Shift+O**) to work in a specific directory.
+The folder shows in the sidebar's **Files** tab, new files save there by default,
+Find in Files searches it, and it reopens the next time you start LightIDE.
+**File > Close Folder** forgets it, and **File > Recent Folders** switches
+between folders. From a terminal:
+
+```bash
+lightide ~/code/my-practice
+```
+
 ### Debugging
 
 Click in the gutter or press **F8** to set a breakpoint, then press **F5**. With
@@ -166,17 +178,18 @@ special judges, such as linked list cycles, get a harness that you wire up once.
 |---|---|---|---|---|
 | New File | Ctrl+N | | Compile | F9 |
 | Open File | Ctrl+O | | Run | F10 |
+| Open Folder | Ctrl+Shift+O | | Find in Files | Ctrl+Shift+F |
 | Save | Ctrl+S | | Compile & Run | F11 |
 | Save All | Ctrl+Shift+S | | Build | Ctrl+F9 |
 | Close Tab | Ctrl+W | | Debug / Continue | F5 |
 | Find | Ctrl+F | | Stop | Shift+F5 |
 | Replace | Ctrl+H | | Step Over | F6 |
-| Find in Files | Ctrl+Shift+F | | Step Into | F7 |
-| Go to Line | Ctrl+G | | Step Out | Shift+F7 |
-| Go to Definition | F12 | | Toggle Breakpoint | F8 |
-| Toggle Sidebar | Ctrl+B | | Toggle Bottom Panel | Ctrl+J |
-| Fetch Problem | Ctrl+Alt+F | | Run LeetCode Tests | Ctrl+Shift+B |
-| Copy Solution | Ctrl+Alt+C | | Run Current Test | Ctrl+Alt+R |
+| Go to Line | Ctrl+G | | Step Into | F7 |
+| Go to Definition | F12 | | Step Out | Shift+F7 |
+| Toggle Sidebar | Ctrl+B | | Toggle Breakpoint | F8 |
+| Toggle Bottom Panel | Ctrl+J | | Fetch Problem | Ctrl+Alt+F |
+| Run LeetCode Tests | Ctrl+Shift+B | | Run Current Test | Ctrl+Alt+R |
+| Copy Solution | Ctrl+Alt+C | | | |
 
 In Application Output, Ctrl+C interrupts the program unless text is selected,
 in which case it copies. Ctrl+Shift+C always copies.
