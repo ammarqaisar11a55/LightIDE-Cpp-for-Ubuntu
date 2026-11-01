@@ -1,0 +1,65 @@
+name: lightide
+base: core24
+adopt-info: lightide
+summary: Lightweight C/C++ IDE, a modern Dev-C++ alternative
+description: |
+  LightIDE is a fast, native C and C++ IDE. Open a .cpp file, press F11 and type
+  into your running program, with no project to create.
+
+  It includes a QScintilla editor, clickable compiler errors, an interactive
+  program console, GDB debugging, multi-file projects, and built-in support for
+  solving LeetCode problems locally.
+
+  LightIDE uses the GCC, G++ and GDB installed on your system:
+
+    sudo apt install build-essential gdb
+website: https://github.com/ammarqaisar11a55/LightIDE-Cpp-for-Ubuntu
+source-code: https://github.com/ammarqaisar11a55/LightIDE-Cpp-for-Ubuntu
+issues: https://github.com/ammarqaisar11a55/LightIDE-Cpp-for-Ubuntu/issues
+grade: stable
+
+# An IDE has to run the host's compiler and debugger on the user's own files, and
+# then run the programs they produce. Strict confinement rules all of that out.
+confinement: classic
+
+platforms:
+  amd64:
+
+apps:
+  lightide:
+    command: usr/bin/lightide
+    desktop: usr/share/applications/lightide.desktop
+    environment:
+      QT_PLUGIN_PATH: $SNAP/usr/lib/x86_64-linux-gnu/qt6/plugins
+
+parts:
+  lightide:
+    plugin: cmake
+    source: .
+    build-attributes:
+      - enable-patchelf
+    cmake-generator: Ninja
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/usr
+      - -DLIGHTIDE_BUILD_TESTS=OFF
+    build-packages:
+      - g++
+      - ninja-build
+      - qt6-base-dev
+      - qt6-svg-dev
+      - libqscintilla2-qt6-dev
+    stage-packages:
+      - libqscintilla2-qt6-15
+      - libqt6network6t64
+      - libqt6svg6
+      - libqt6widgets6t64
+      - qt6-qpa-plugins
+      - qt6-wayland
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -n 's/^    VERSION \([0-9.]*\)$/\1/p' CMakeLists.txt)"
+    override-prime: |
+      craftctl default
+      sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/lightide.svg|' \
+        usr/share/applications/lightide.desktop
