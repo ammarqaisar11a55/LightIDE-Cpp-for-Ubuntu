@@ -91,8 +91,10 @@ public:
 
     QStringList recentFiles() const { return m_recentFiles; }
     QStringList recentProjects() const { return m_recentProjects; }
+    QStringList recentFolders() const { return m_recentFolders; }
     void addRecentFile(const QString &path);
     void addRecentProject(const QString &path);
+    void addRecentFolder(const QString &path);
     void clearRecent();
 
     FileRunOptions runOptions(const QString &sourcePath) const;
@@ -109,4 +111,5 @@ private:
     QSettings *m_store;
     QStringList m_recentFiles;
     QStringList m_recentProjects;
+    QStringList m_recentFolders;
 };
