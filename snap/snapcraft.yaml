@@ -36,8 +36,6 @@ parts:
   lightide:
     plugin: cmake
     source: .
-    build-attributes:
-      - enable-patchelf
     cmake-generator: Ninja
     cmake-parameters:
       - -DCMAKE_BUILD_TYPE=Release
@@ -46,6 +44,7 @@ parts:
     build-packages:
       - g++
       - ninja-build
+      - patchelf
       - qt6-base-dev
       - qt6-svg-dev
       - libqscintilla2-qt6-dev
@@ -59,7 +58,21 @@ parts:
     override-pull: |
       craftctl default
       craftctl set version="$(sed -n 's/^    VERSION \([0-9.]*\)$/\1/p' CMakeLists.txt)"
+    # Every bundled binary is pointed at the snap's libraries and core24's loader.
+    # LD_LIBRARY_PATH would do this too, but the compiler, GDB and the user's own
+    # programs would inherit it and load the wrong libraries.
     override-prime: |
       craftctl default
+      runpath=/snap/lightide/current/usr/lib/x86_64-linux-gnu
+      runpath=$runpath:/snap/lightide/current/usr/lib/x86_64-linux-gnu/libproxy
+      runpath=$runpath:/snap/core24/current/usr/lib/x86_64-linux-gnu
+      find usr -type f | while read -r file; do
+        patchelf --print-rpath "$file" > /dev/null 2>&1 || continue
+        chmod u+w "$file"
+        patchelf --set-rpath "$runpath" "$file"
+        if patchelf --print-interpreter "$file" > /dev/null 2>&1; then
+          patchelf --set-interpreter /snap/core24/current/lib64/ld-linux-x86-64.so.2 "$file"
+        fi
+      done
       sed -i 's|^Icon=.*|Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/lightide.svg|' \
         usr/share/applications/lightide.desktop
