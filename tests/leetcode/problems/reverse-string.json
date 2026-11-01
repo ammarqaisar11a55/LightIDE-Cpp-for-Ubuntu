@@ -1,0 +1,17 @@
+{
+  "questionId": "344",
+  "questionFrontendId": "344",
+  "title": "Reverse String",
+  "titleSlug": "reverse-string",
+  "difficulty": "Easy",
+  "isPaidOnly": false,
+  "content": "<p><strong class=\"example\">Example 1:</strong></p>\n<pre><strong>Input:</strong> s = [\"h\",\"e\",\"l\",\"l\",\"o\"]\n<strong>Output:</strong> [\"o\",\"l\",\"l\",\"e\",\"h\"]\n</pre><p><strong class=\"example\">Example 2:</strong></p>\n<pre><strong>Input:</strong> s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]\n<strong>Output:</strong> [\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]\n</pre>\n<p>&nbsp;</p>\n",
+  "exampleTestcases": "[\"h\",\"e\",\"l\",\"l\",\"o\"]\n[\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+  "metaData": "{\n  \"name\": \"reverseString\",\n  \"params\": [\n    {\n      \"name\": \"s\",\n      \"type\": \"character[]\"\n    }\n  ],\n  \"return\": {\n    \"type\": \"void\"\n  },\n  \"output\": {\n    \"paramindex\": 0\n  }\n}",
+  "codeSnippets": [
+    {
+      "langSlug": "cpp",
+      "code": "class Solution {\npublic:\n    void reverseString(vector<char>& s) {\n        \n    }\n};"
+    }
+  ]
+}
