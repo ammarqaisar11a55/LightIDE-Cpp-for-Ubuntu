@@ -26,6 +26,16 @@ CompilerManager::CompilerManager(QObject *parent)
 {
 }
 
+CompilerManager::~CompilerManager()
+{
+    const QList<QProcess *> running = findChildren<QProcess *>();
+    for (QProcess *process : running) {
+        process->disconnect(this);
+        process->kill();
+        process->waitForFinished(200);
+    }
+}
+
 void CompilerManager::detect(const CompilerSettings &settings)
 {
     ++m_generation;   // Results from an earlier detect() are stale.
