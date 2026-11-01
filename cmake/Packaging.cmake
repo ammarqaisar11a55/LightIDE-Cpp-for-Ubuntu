@@ -1,4 +1,6 @@
 # Builds a Debian package with: cmake --build <build> --target package
+# Its dependencies are computed from the libraries found at build time, so a
+# package should be built on the Ubuntu release it is meant for.
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "lightide")
