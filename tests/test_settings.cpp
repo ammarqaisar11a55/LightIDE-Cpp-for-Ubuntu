@@ -76,6 +76,24 @@ private slots:
         QCOMPARE(settings.recentFiles().count("/f10"), 1);
     }
 
+    void recentFoldersPersist()
+    {
+        QTemporaryDir dir;
+        const QString path = dir.filePath("s.ini");
+        {
+            Settings settings(path);
+            settings.addRecentFolder("/work/a");
+            settings.addRecentFolder("/work/b");
+            settings.addRecentFolder("/work/a");
+            settings.save();
+        }
+        Settings settings(path);
+        settings.load();
+        QCOMPARE(settings.recentFolders(), QStringList({"/work/a", "/work/b"}));
+        settings.clearRecent();
+        QVERIFY(settings.recentFolders().isEmpty());
+    }
+
     void buildOptionsFollowConfiguration()
     {
         CompilerSettings compiler;
