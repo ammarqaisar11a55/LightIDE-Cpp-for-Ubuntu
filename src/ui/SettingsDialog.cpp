@@ -6,6 +6,7 @@
 #include <QColorDialog>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QFontComboBox>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -102,6 +103,7 @@ SettingsDialog::SettingsDialog(Settings *settings, QWidget *parent)
     m_tabs->addTab(createAppearancePage(), tr("Appearance"));
     m_tabs->addTab(createEditorPage(), tr("Editor"));
     m_tabs->addTab(createCompilerPage(), tr("Compiler"));
+    m_tabs->addTab(createLeetCodePage(), tr("LeetCode"));
 
     auto *buttons =
         new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
@@ -260,6 +262,29 @@ QWidget *SettingsDialog::createCompilerPage()
     return page;
 }
 
+QWidget *SettingsDialog::createLeetCodePage()
+{
+    m_lcDirectory = new QLineEdit;
+    m_lcDirectory->setPlaceholderText(QDir::home().filePath(QStringLiteral("leetcode")));
+    m_lcStandard = new QComboBox;
+    m_lcStandard->addItems({QStringLiteral("c++17"), QStringLiteral("c++20"), QStringLiteral("c++23")});
+    m_lcFlags = new QLineEdit;
+    m_lcTimeout = new QSpinBox;
+    m_lcTimeout->setRange(100, 120000);
+    m_lcTimeout->setSingleStep(500);
+    m_lcTimeout->setSuffix(tr(" ms"));
+    m_lcSanitizers = new QCheckBox(tr("Build with AddressSanitizer and UBSan, like LeetCode's judge"));
+
+    auto *page = new QWidget;
+    auto *form = new QFormLayout(page);
+    form->addRow(tr("Problems folder:"), m_lcDirectory);
+    form->addRow(tr("C++ standard:"), m_lcStandard);
+    form->addRow(tr("Compiler flags:"), m_lcFlags);
+    form->addRow(tr("Time limit per test:"), m_lcTimeout);
+    form->addRow(QString(), m_lcSanitizers);
+    return page;
+}
+
 void SettingsDialog::loadFromSettings()
 {
     const AppearanceSettings &appearance = m_settings->appearance;
@@ -299,6 +324,13 @@ void SettingsDialog::loadFromSettings()
     m_libraries->setText(compiler.libraries);
     m_additionalArgs->setText(compiler.additionalArgs);
     m_outputDirectory->setText(compiler.outputDirectory);
+
+    const LeetCodeSettings &leetcode = m_settings->leetcode;
+    m_lcDirectory->setText(leetcode.problemsDirectory);
+    m_lcStandard->setCurrentText(leetcode.standard);
+    m_lcFlags->setText(leetcode.flags);
+    m_lcTimeout->setValue(leetcode.timeoutMs);
+    m_lcSanitizers->setChecked(leetcode.sanitizers);
 }
 
 void SettingsDialog::applyToSettings()
@@ -344,6 +376,13 @@ void SettingsDialog::applyToSettings()
     compiler.libraries = m_libraries->text().trimmed();
     compiler.additionalArgs = m_additionalArgs->text().trimmed();
     compiler.outputDirectory = m_outputDirectory->text().trimmed();
+
+    LeetCodeSettings &leetcode = m_settings->leetcode;
+    leetcode.problemsDirectory = m_lcDirectory->text().trimmed();
+    leetcode.standard = m_lcStandard->currentText();
+    leetcode.flags = m_lcFlags->text().trimmed();
+    leetcode.timeoutMs = m_lcTimeout->value();
+    leetcode.sanitizers = m_lcSanitizers->isChecked();
 
     m_settings->save();
     emit m_settings->changed();
