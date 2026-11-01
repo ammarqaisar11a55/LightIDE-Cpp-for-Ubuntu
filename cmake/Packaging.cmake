@@ -1,0 +1,17 @@
+# Builds a Debian package with: cmake --build <build> --target package
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "lightide")
+set(CPACK_PACKAGE_VENDOR "Muhammad Ammar Qaisar")
+set(CPACK_PACKAGE_CONTACT "Muhammad Ammar Qaisar")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_DESCRIPTION}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_FILE_NAME "lightide_${PROJECT_VERSION}_amd64")
+set(CPACK_STRIP_FILES ON)
+
+set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "build-essential, gdb")
+
+include(CPack)
