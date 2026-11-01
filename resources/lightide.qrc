@@ -1,0 +1,29 @@
+<RCC>
+    <qresource prefix="/">
+        <file>lightide.svg</file>
+        <file>icons/close-dark.svg</file>
+        <file>icons/close-light.svg</file>
+        <file>icons/compile-run.svg</file>
+        <file>icons/compile.svg</file>
+        <file>icons/continue.svg</file>
+        <file>icons/debug.svg</file>
+        <file>icons/error.svg</file>
+        <file>icons/find.svg</file>
+        <file>icons/folder.svg</file>
+        <file>icons/new-file.svg</file>
+        <file>icons/note.svg</file>
+        <file>icons/open.svg</file>
+        <file>icons/panel.svg</file>
+        <file>icons/redo.svg</file>
+        <file>icons/run.svg</file>
+        <file>icons/save-all.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/sidebar.svg</file>
+        <file>icons/step-into.svg</file>
+        <file>icons/step-out.svg</file>
+        <file>icons/step-over.svg</file>
+        <file>icons/stop.svg</file>
+        <file>icons/undo.svg</file>
+        <file>icons/warning.svg</file>
+    </qresource>
+</RCC>
