@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
@@ -188,14 +189,20 @@ bool EditorWidget::save(CodeEditor *editor)
     return writeTo(editor, editor->filePath());
 }
 
+QString EditorWidget::suggestedSavePath(const CodeEditor *editor) const
+{
+    if (!editor->isUntitled())
+        return editor->filePath();
+    const QString name = editor->displayName().remove(QLatin1Char(' '));
+    return m_defaultDirectory.isEmpty() ? name : QDir(m_defaultDirectory).filePath(name);
+}
+
 bool EditorWidget::saveAs(CodeEditor *editor)
 {
     if (!editor)
         return false;
 
-    const QString suggestion = editor->isUntitled()
-                                   ? editor->displayName().remove(QLatin1Char(' '))
-                                   : editor->filePath();
+    const QString suggestion = suggestedSavePath(editor);
     const QString path = QFileDialog::getSaveFileName(this, tr("Save File"), suggestion,
                                                       FileManager::openFileFilter());
     if (path.isEmpty())
