@@ -43,7 +43,7 @@ already on your system, and works entirely offline.
 ### Ubuntu 24.04 and 26.04
 
 Download the `.deb` for your Ubuntu version from the
-[releases page](https://github.com/ammarqaisar11a55/LightIDE-for-Ubuntu/releases/latest),
+[releases page](https://github.com/ammarqaisar11a55/LightIDE-Cpp-for-Ubuntu/releases/latest),
 then install it, using the name of the file you downloaded:
 
 ```bash
