@@ -12,6 +12,8 @@ already on your system, and works entirely offline.
 |---|---|
 | ![Interactive input](docs/screenshots/interactive.png) | ![Compiler errors](docs/screenshots/compile-error.png) |
 
+![Solving a LeetCode problem in LightIDE](docs/screenshots/leetcode.png)
+
 ## Features
 
 - **Editor:** QScintilla with C and C++ highlighting up to C++23, tabs, code
@@ -26,6 +28,10 @@ already on your system, and works entirely offline.
   Stop ends the program and anything it started.
 - **Debug:** GDB integration with breakpoints, stepping, variables, call stack
   and a console. Step Into enters your code and steps over the standard library.
+- **LeetCode:** fetch a problem by URL, get a ready-to-run C++ file with its
+  examples as test cases, run them with one key, and copy a clean solution back
+  to submit. Works with folders made by the
+  [LeetRunner](https://github.com/ammarqaisar11a55/LeetRunner) VS Code extension.
 - **Projects:** optional. Multi-file builds are parallel and incremental, with
   Debug and Release configurations, for executables and static or shared
   libraries, described by a plain JSON file.
@@ -34,12 +40,14 @@ already on your system, and works entirely offline.
 
 ## Installing
 
-### Ubuntu 26.04
+### Ubuntu 24.04 and 26.04
 
-Download the `.deb` and install it:
+Download the `.deb` for your Ubuntu version from the
+[releases page](https://github.com/ammarqaisar11a55/Lightweight-C-Cpp-IDE-Modern-Dev-Cpp-Alternative/releases/latest),
+then install it, using the name of the file you downloaded:
 
 ```bash
-sudo apt install ./lightide_0.1.0_amd64.deb
+sudo apt install ./lightide_0.2.0_ubuntu24.04_amd64.deb
 ```
 
 You also need the compiler and debugger, if you don't already have them:
@@ -48,8 +56,8 @@ You also need the compiler and debugger, if you don't already have them:
 sudo apt install build-essential gdb
 ```
 
-A `.deb` depends on the Qt version it was built against, so the package built on
-26.04 will not install on 24.04. On other releases, build from source.
+A `.deb` depends on the Qt version it was built against, so use the one for your
+release. On any other release, build from source.
 
 ### Building from source
 
@@ -116,6 +124,42 @@ file. A project file is plain JSON that you can read and edit by hand:
 Build output goes to `build/debug` or `build/release` inside the project folder.
 A file that is not part of the open project still builds on its own.
 
+### LeetCode
+
+1. Press **Ctrl+Alt+F** and paste a problem URL, slug or title. Problems go in
+   `~/leetcode`, which you can change under **Tools > Settings > LeetCode**.
+2. Write your code in the `USER SOLUTION` section of `solution.cpp`.
+3. Press **Ctrl+Shift+B** to run every example. Results, expected and actual
+   output, and each test's own prints appear in the **LeetCode** tab.
+4. Press **Ctrl+Alt+C** to copy just your solution, then paste it into LeetCode
+   and submit. LightIDE never submits or judges for you.
+
+Everything after the `TEST HARNESS` marker is regenerated from `tests.json`
+before each run, so your section is never rewritten. Each test runs in its own
+process with a time limit, so a crash or infinite loop stays in that one test.
+
+Also under the **LeetCode** menu:
+
+- **Run Current Test** (**Ctrl+Alt+R**) runs the test at the cursor.
+- **Debug Solution** stops at your breakpoints in GDB.
+- **Add Custom Test** checks your input against the C++ types.
+- **Refresh Problem** updates the statement and examples, and keeps your code
+  and custom tests.
+
+To keep debug prints out of what you submit, wrap them in `#ifdef LC_LOCAL` or
+end the line with `// @local`.
+
+Public problems need no account. For Premium problems, **Connect Account** takes
+the `LEETCODE_SESSION` cookie from your browser. It stays in memory until you
+close LightIDE, so you enter it each session, and it is never written to disk.
+
+Set `"comparison"` in a problem's `metadata.json` to `exact`, `unordered` or
+`unordered-deep` if it accepts answers in any order. The test results suggest
+this when an answer differs only in order.
+
+Interactive, SQL, shell and concurrency problems aren't supported. Problems with
+special judges, such as linked list cycles, get a harness that you wire up once.
+
 ### Keyboard shortcuts
 
 | Action | Shortcut | | Action | Shortcut |
@@ -131,6 +175,8 @@ A file that is not part of the open project still builds on its own.
 | Go to Line | Ctrl+G | | Step Out | Shift+F7 |
 | Go to Definition | F12 | | Toggle Breakpoint | F8 |
 | Toggle Sidebar | Ctrl+B | | Toggle Bottom Panel | Ctrl+J |
+| Fetch Problem | Ctrl+Alt+F | | Run LeetCode Tests | Ctrl+Shift+B |
+| Copy Solution | Ctrl+Alt+C | | Run Current Test | Ctrl+Alt+R |
 
 In Application Output, Ctrl+C interrupts the program unless text is selected,
 in which case it copies. Ctrl+Shift+C always copies.
