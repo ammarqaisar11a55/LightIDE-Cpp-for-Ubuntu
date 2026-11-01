@@ -21,6 +21,7 @@ class CompilerManager : public QObject
 
 public:
     explicit CompilerManager(QObject *parent = nullptr);
+    ~CompilerManager() override;
 
     void detect(const CompilerSettings &settings);
 
