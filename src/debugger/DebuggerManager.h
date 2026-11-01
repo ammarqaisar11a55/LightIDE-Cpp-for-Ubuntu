@@ -102,6 +102,7 @@ private:
     using Callback = std::function<void(const MiRecord &)>;
 
     void setState(State state);
+    void resume(const QString &command);
     void send(const QString &command, Callback callback = {});
     void onStarted();
     void onReadable();
