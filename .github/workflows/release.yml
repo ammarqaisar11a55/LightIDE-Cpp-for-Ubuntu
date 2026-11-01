@@ -1,0 +1,89 @@
+# Builds, tests and packages LightIDE on each supported Ubuntu release.
+# Pushing a tag such as v0.1.0 also publishes the packages as a GitHub Release.
+
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Ubuntu ${{ matrix.ubuntu }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['24.04', '26.04']
+    # A .deb depends on the Qt it was built against, so each release is built on
+    # its own image rather than on whatever the runner happens to be.
+    container:
+      image: ubuntu:${{ matrix.ubuntu }}
+      # GDB traces the debugged program and turns off address randomization.
+      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
+    env:
+      LC_ALL: C.UTF-8
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential gdb cmake ninja-build dpkg-dev fonts-dejavu-core \
+            qt6-base-dev qt6-svg-dev libqscintilla2-qt6-dev
+
+      - uses: actions/checkout@v7
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: |
+          cmake --build build --target package
+          version=$(dpkg-deb -f build/lightide_*.deb Version)
+          mkdir dist
+          mv build/lightide_*.deb "dist/lightide_${version}_ubuntu${{ matrix.ubuntu }}_amd64.deb"
+          dpkg-deb -I dist/*.deb
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lightide-ubuntu-${{ matrix.ubuntu }}
+          path: dist/*.deb
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: packages
+          merge-multiple: true
+
+      - name: Check the tag matches the package version
+        run: ls "packages/lightide_${TAG#v}_ubuntu"*.deb
+
+      - name: Publish
+        run: |
+          gh release view "$TAG" > /dev/null 2>&1 \
+            || gh release create "$TAG" --title "LightIDE ${TAG#v}" --generate-notes
+          gh release upload "$TAG" packages/*.deb --clobber
