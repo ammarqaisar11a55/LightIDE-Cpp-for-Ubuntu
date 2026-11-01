@@ -21,8 +21,14 @@ lightide_add_test(test_runner)
 lightide_add_test(test_debugger)
 lightide_add_test(test_symbols)
 
+lightide_add_test(test_leetcode)
+target_compile_definitions(test_leetcode PRIVATE
+    LIGHTIDE_LEETCODE_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/leetcode")
+
 qt_add_executable(test_ui test_ui.cpp)
 target_link_libraries(test_ui PRIVATE lightide_ui Qt6::Test)
+target_compile_definitions(test_ui PRIVATE
+    LIGHTIDE_LEETCODE_FIXTURES="${CMAKE_CURRENT_SOURCE_DIR}/leetcode")
 add_test(NAME test_ui COMMAND test_ui)
 set_tests_properties(test_ui PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
