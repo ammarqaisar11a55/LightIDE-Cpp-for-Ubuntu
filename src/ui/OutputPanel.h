@@ -7,6 +7,7 @@
 #include <QTabWidget>
 
 class DebugPanel;
+class LeetCodePanel;
 class QPlainTextEdit;
 class QTreeWidget;
 class TerminalView;
@@ -18,12 +19,13 @@ class OutputPanel : public QTabWidget
     Q_OBJECT
 
 public:
-    enum Tab { CompilerTab, MessagesTab, ApplicationTab, DebugTab };
+    enum Tab { CompilerTab, MessagesTab, ApplicationTab, DebugTab, LeetCodeTab };
 
     explicit OutputPanel(QWidget *parent = nullptr);
 
     TerminalView *terminal() const { return m_terminal; }
     DebugPanel *debugPanel() const { return m_debug; }
+    LeetCodePanel *leetCodePanel() const { return m_leetCode; }
     QPlainTextEdit *compilerOutput() const { return m_compiler; }
     QTreeWidget *messages() const { return m_messages; }
 
@@ -54,6 +56,7 @@ private:
     QTreeWidget *m_messages;
     TerminalView *m_terminal;
     DebugPanel *m_debug;
+    LeetCodePanel *m_leetCode;
     QList<Diagnostic> m_diagnostics;
     ThemeKind m_theme = ThemeKind::Dark;
     int m_errors = 0;
