@@ -1,0 +1,29 @@
+{
+    "id": 20,
+    "questionId": "20",
+    "slug": "valid-parentheses",
+    "title": "Valid Parentheses",
+    "difficulty": "Easy",
+    "language": "cpp",
+    "url": "https://leetcode.com/problems/valid-parentheses/",
+    "support": "function",
+    "harness": "generated",
+    "comparison": "exact",
+    "meta": {
+        "name": "isValid",
+        "params": [
+            {
+                "name": "s",
+                "type": "string"
+            }
+        ],
+        "returnType": "boolean",
+        "systemDesign": false,
+        "manual": false
+    },
+    "starterCode": "class Solution {\npublic:\n    bool isValid(string s) {\n        \n    }\n};",
+    "signatureHash": "a44bc39b55d48c40",
+    "fetchedAt": "2026-01-01T00:00:00.000Z",
+    "generator": "leetrunner",
+    "generatorVersion": "0.1.0"
+}
