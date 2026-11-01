@@ -19,6 +19,7 @@ QString shellQuote(const QString &argument)
 
 // Keeps output machine-readable; see DiagnosticsParser.
 const QStringList diagnosticFlags = {QStringLiteral("-fdiagnostics-color=never"),
+                                     QStringLiteral("-fdiagnostics-column-unit=byte"),
                                      QStringLiteral("-fmessage-length=0")};
 
 QStringList compileFlags(const BuildOptions &options, SourceLanguage language)
