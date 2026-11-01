@@ -27,6 +27,12 @@ jobs:
       - uses: snapcore/action-build@v1
         id: build
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lightide-snap
+          path: ${{ steps.build.outputs.snap }}
+          if-no-files-found: error
+
       - name: Install and start the snap
         env:
           SNAP_FILE: ${{ steps.build.outputs.snap }}
@@ -34,12 +40,6 @@ jobs:
           sudo snap install --dangerous --classic "$SNAP_FILE"
           lightide --version
           QT_QPA_PLATFORM=offscreen timeout 5 lightide || test $? -eq 124
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: lightide-snap
-          path: ${{ steps.build.outputs.snap }}
-          if-no-files-found: error
 
       - uses: snapcore/action-publish@v1
         if: github.ref_type == 'tag' && env.SNAPCRAFT_STORE_CREDENTIALS != ''
