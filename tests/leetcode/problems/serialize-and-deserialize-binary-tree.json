@@ -1,0 +1,17 @@
+{
+  "questionId": "297",
+  "questionFrontendId": "297",
+  "title": "Serialize and Deserialize Binary Tree",
+  "titleSlug": "serialize-and-deserialize-binary-tree",
+  "difficulty": "Hard",
+  "isPaidOnly": false,
+  "content": "<p><strong class=\"example\">Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/09/15/serdeser.jpg\" style=\"width: 442px; height: 324px;\" />\n<pre>\n<strong>Input:</strong> root = [1,2,3,null,null,4,5]\n<strong>Output:</strong> [1,2,3,null,null,4,5]\n</pre>\n\n<p><strong class=\"example\">Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> root = []\n<strong>Output:</strong> []\n</pre>\n\n<p>&nbsp;</p>\n",
+  "exampleTestcases": "[1,2,3,null,null,4,5]\n[]",
+  "metaData": "{\n  \"name\": \"Codec\",\n  \"params\": [\n    {\n      \"name\": \"root\",\n      \"type\": \"TreeNode\"\n    }\n  ],\n  \"return\": {\n    \"type\": \"string\"\n  },\n  \"manual\": true\n}",
+  "codeSnippets": [
+    {
+      "langSlug": "cpp",
+      "code": "/**\n * Definition for a binary tree node.\n * struct TreeNode {\n *     int val;\n *     TreeNode *left;\n *     TreeNode *right;\n *     TreeNode(int x) : val(x), left(NULL), right(NULL) {}\n * };\n */\nclass Codec {\npublic:\n\n    // Encodes a tree to a single string.\n    string serialize(TreeNode* root) {\n        \n    }\n\n    // Decodes your encoded data to tree.\n    TreeNode* deserialize(string data) {\n        \n    }\n};\n\n// Your Codec object will be instantiated and called as such:\n// Codec ser, deser;\n// TreeNode* ans = deser.deserialize(ser.serialize(root));"
+    }
+  ]
+}
