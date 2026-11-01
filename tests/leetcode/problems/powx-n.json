@@ -1,0 +1,17 @@
+{
+  "questionId": "50",
+  "questionFrontendId": "50",
+  "title": "Pow(x, n)",
+  "titleSlug": "powx-n",
+  "difficulty": "Medium",
+  "isPaidOnly": false,
+  "content": "<p><strong class=\"example\">Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> x = 2.00000, n = 10\n<strong>Output:</strong> 1024.00000\n</pre>\n\n<p><strong class=\"example\">Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> x = 2.10000, n = 3\n<strong>Output:</strong> 9.26100\n</pre>\n\n<p><strong class=\"example\">Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> x = 2.00000, n = -2\n<strong>Output:</strong> 0.25000\n<strong>Explanation:</strong> 2<sup>-2</sup> = 1/2<sup>2</sup> = 1/4 = 0.25\n</pre>\n\n<p>&nbsp;</p>\n",
+  "exampleTestcases": "2.00000\n10\n2.10000\n3\n2.00000\n-2",
+  "metaData": "{\r\n  \"name\": \"myPow\",\r\n  \"params\": [\r\n    {\r\n      \"name\": \"x\",\r\n      \"type\": \"double\"\r\n    },\r\n    {\r\n      \"name\": \"n\",\r\n      \"type\": \"integer\"\r\n    }\r\n  ],\r\n  \"return\": {\r\n    \"type\": \"double\"\r\n  }\r\n}",
+  "codeSnippets": [
+    {
+      "langSlug": "cpp",
+      "code": "class Solution {\npublic:\n    double myPow(double x, int n) {\n        \n    }\n};"
+    }
+  ]
+}
