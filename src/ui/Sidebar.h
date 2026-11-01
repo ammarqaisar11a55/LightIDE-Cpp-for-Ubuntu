@@ -23,7 +23,10 @@ public:
     explicit Sidebar(QWidget *parent = nullptr);
 
     QString rootFolder() const { return m_rootFolder; }
-    void setRootFolder(const QString &path);
+
+    // chosen is false for the fallback shown when the user has picked no folder,
+    // so that the button keeps offering to open one.
+    void setRootFolder(const QString &path, bool chosen = true);
 
     void setProject(const Project *project);   // Null when no project is open.
     void setOpenFiles(const QList<CodeEditor *> &editors, CodeEditor *current);
@@ -43,7 +46,7 @@ signals:
     void addProjectFilesRequested();
     void newProjectFolderRequested(const QString &parentFolder);
     void removeProjectFileRequested(const QString &path);
-    void rootFolderChanged(const QString &path);
+    void openFolderRequested();
 
 protected:
     void showEvent(QShowEvent *event) override;
@@ -51,7 +54,6 @@ protected:
 private:
     QWidget *createFilesPage();
     void ensureFileModel();
-    void chooseFolder();
     void onProjectContextMenu(const QPoint &position);
     QTreeWidgetItem *folderItem(const QString &relativeFolder, QTreeWidgetItem *root);
 
