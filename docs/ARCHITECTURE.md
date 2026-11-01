@@ -16,7 +16,7 @@ between the user and that first run.
 | QScintilla | 2.14 | 2.14 |
 
 The code keeps to APIs available in Qt 6.4 so that it builds on the target.
-Development happens on the newer stack, so see "Known limitations" below.
+Every push is built and tested on both releases by GitHub Actions.
 
 ## Layers
 
@@ -35,6 +35,7 @@ Development happens on the newer stack, so see "Known limitations" below.
                  |  debugger/  GDB/MI client         |  without a
                  |  project/   project model         |  display
                  |  filesystem/ file I/O             |
+                 |  leetcode/  fetch, harness, tests |
                  |  core/      settings              |
                  +-----------------+-----------------+
                                    | fork/exec, QProcess
@@ -117,6 +118,31 @@ user's own functions.
 Icons are small SVG files with `currentColor` strokes, tinted at runtime for the
 active theme. One icon set therefore serves both themes.
 
+### LeetCode
+
+`leetcode/` is a native port of the LeetRunner VS Code extension's pipeline. It
+keeps the extension's folder format and its C++ runtime, so one problem folder
+works in both, and its tests hold the port to the extension's own output.
+
+```text
+GraphQL ──> QuestionParser ──> ProblemFolder ──> solution.cpp, tests.json, .lc/
+                                    │
+             CppSignature + HarnessGenerator (function, design or manual)
+                                    │
+         BuildProcess (shared with normal builds, so errors are clickable)
+                                    │
+              TestSuiteRunner (one process per test) ──> OutputComparator
+```
+
+Each test gets its own process with a time limit and an output cap. These run on
+pipes and not on a pseudo-terminal, because stdout has to stay separate from
+stderr and the harness needs no input.
+
+This is the only part of the IDE that uses the network, and only when the user
+fetches or refreshes a problem. `QNetworkAccessManager` isn't created until then,
+so everything else stays offline. A Premium session cookie lives only in memory:
+Qt has no keychain API, and a secret should not go in a settings file.
+
 ## Measured performance
 
 Release build on Ubuntu 26.04 with Qt 6.10, on a 12-thread machine under Xvfb:
@@ -137,9 +163,8 @@ two classes, and the `sudo apt` hint in the missing-compiler message replaced.
 
 ## Known limitations
 
-- Developed and tested on Ubuntu 26.04 with Qt 6.10 and GCC 15. The Qt 6.4 and
-  GCC 13 combination on 24.04 is targeted by avoiding newer APIs, but it needs
-  verifying on a 24.04 machine.
+- Ubuntu 24.04 is tested in a container by CI, which has no real display. Day to
+  day development and manual testing happen on 26.04.
 - The output view is a line-oriented terminal, not a full emulator. It handles
   backspace, carriage return and strips ANSI escapes. Full-screen programs such
   as `vim` or `ncurses` applications will not render.
@@ -151,8 +176,9 @@ two classes, and the `sudo apt` hint in the missing-compiler message replaced.
   colours.
 - Run decides whether a single file is stale from that file alone. After editing
   only a header, use Compile & Run.
-- The `.deb` depends on the Qt version it was built against, so it must be built
-  on the Ubuntu release it targets.
+- The `.deb` depends on the Qt version it was built against, so CI builds one per
+  Ubuntu release.
+- A LeetCode Premium session has to be entered again after each restart.
 - Go to Definition and completion are text-based. There is no semantic index,
   which is a deliberate trade to keep the IDE light.
 
