@@ -105,10 +105,29 @@ so that a debug session never touches the network.
 Projects are `.lideproj` files holding plain indented JSON with source paths
 relative to the project file, so they can be read, diffed and edited by hand.
 
+### Step Into and the standard library
+
+GDB is told to skip functions in `std::`, `__gnu_cxx::` and `__cxxabiv1::`. Skip
+rules by file (`skip -gfi /usr/include/*`) look like the obvious choice, but GDB
+also matches them against relative source names, which silently skipped the
+user's own functions.
+
 ### Icons
 
 Icons are small SVG files with `currentColor` strokes, tinted at runtime for the
 active theme. One icon set therefore serves both themes.
+
+## Measured performance
+
+Release build on Ubuntu 26.04 with Qt 6.10, on a 12-thread machine under Xvfb:
+
+| | |
+|---|---|
+| Executable size | 1.2 MB |
+| Debian package | 0.37 MB |
+| Process start to ready | about 330 ms, of which about 150 ms is dynamic linking |
+| Idle private memory | about 23 MB dirty pages |
+| Idle resident memory | about 120 MB, mostly Qt libraries shared with other processes |
 
 ## Windows path
 
@@ -126,6 +145,14 @@ two classes, and the `sudo apt` hint in the missing-compiler message replaced.
   as `vim` or `ncurses` applications will not render.
 - Lines typed into a running program are limited to 4095 bytes by the kernel's
   canonical-mode line buffer.
+- Output lines longer than 4096 characters are wrapped into separate lines, so
+  that a program printing without newlines cannot freeze the view.
+- stdout and stderr share one terminal, so they are not shown in different
+  colours.
+- Run decides whether a single file is stale from that file alone. After editing
+  only a header, use Compile & Run.
+- The `.deb` depends on the Qt version it was built against, so it must be built
+  on the Ubuntu release it targets.
 - Go to Definition and completion are text-based. There is no semantic index,
   which is a deliberate trade to keep the IDE light.
 
